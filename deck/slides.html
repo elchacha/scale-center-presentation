@@ -1,0 +1,3002 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scale Center — la prod a des choses à vous dire</title>
+<link rel="stylesheet" href="vendor/reveal/reveal.min.css">
+<link rel="stylesheet" href="vendor/reveal/theme/white.min.css">
+<link rel="stylesheet" href="vendor/reveal/plugin/highlight/monokai.min.css">
+<style>
+/* ════════════════════════════════════════════════════════════════════════
+   reveal-deck — base.css (moteur générique)
+   Surcharger dans le deck.css du deck, pas ici.
+   Règle d'animation : CSS @keyframes / transitions uniquement,
+   état caché = opacity:0 (réserve la hauteur), fill-mode forwards.
+   ════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --rd-accent: #D97706;      /* h1, soulignement h2, blockquote */
+  --rd-ink: #1E293B;         /* texte fort */
+  --rd-muted: #64748B;
+  --rd-link: #1D4ED8;
+  --rd-font: 'Segoe UI', Arial, sans-serif;
+  --rd-mono: 'Consolas', 'Cascadia Code', monospace;
+  --rd-tw-step: 28ms;        /* pas de l'effet machine à écrire des popups */
+}
+
+/* ── Typographie ─────────────────────────────────────────────────────────── */
+.reveal { font-size: 20px; font-family: var(--rd-font); color: var(--rd-ink); }
+.reveal h1, .reveal h2, .reveal h3 { text-transform: none; font-family: var(--rd-font); }
+.reveal h1 { color: var(--rd-accent); font-size: 1.9em; margin: 0 0 .2em; line-height: 1.2; }
+/* display:table = bloc qui épouse sa largeur (soulignement ajusté) sans se mettre
+   à côté des listes, que le thème white de Reveal passe en inline-block */
+.reveal h2 {
+  color: var(--rd-ink); font-size: 1.35em; margin: 0 auto .4em; line-height: 1.2;
+  padding-bottom: .15em; border-bottom: 3px solid var(--rd-accent); display: table;
+}
+.reveal h3 { color: #7C3AED; font-size: 1em; margin: 0 0 .2em; font-weight: 600; }
+.reveal p { margin: .2em 0; }
+.reveal ul, .reveal ol { margin: .15em 0; padding-left: 1.3em; }
+.reveal li { margin: .1em 0; }
+.reveal strong { color: #1E40AF; }
+.reveal a { color: var(--rd-link); }
+
+.reveal code {
+  background: var(--rd-ink); color: #E2E8F0; padding: 2px 7px; border-radius: 4px;
+  font-size: .82em; font-family: var(--rd-mono);
+}
+.reveal pre {
+  font-size: .72em; margin: .3em 0; line-height: 1.4; border-radius: 6px;
+  overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.18);
+}
+.reveal pre code { font-size: 1em; padding: .6em .9em; background: #272822; color: #f8f8f2; }
+
+.reveal blockquote {
+  border-left: 4px solid var(--rd-accent); background: #FFFBEB; padding: 4px 12px;
+  margin: .3em 0; font-style: italic; font-size: .88em; width: auto; box-shadow: none;
+}
+.reveal table { width: 100%; font-size: .82em; border-collapse: collapse; margin: .3em 0; }
+.reveal th { background: var(--rd-link); color: #fff; padding: 4px 8px; }
+.reveal td { padding: 3px 8px; border-bottom: 1px solid #E2E8F0; }
+.reveal tr:nth-child(even) td { background: #F8FAFC; }
+.reveal .slide-number { font-size: 14px; color: var(--rd-muted); background: transparent; }
+
+/* ── Slide « bloc » (titre de partie) : animée à l'arrivée, sans JS ─────── */
+.bloc-center {
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  height: 100%; min-height: 60vh; text-align: center;
+}
+.bloc-num { font-size: .65em; color: var(--rd-muted); text-transform: uppercase; letter-spacing: .2em; margin-bottom: 10px; }
+.bloc-center h1 { color: var(--rd-ink); font-size: 2em; margin: .15em 0; }
+.bloc-sub { color: var(--rd-muted); font-size: .9em; margin: 0 0 .4em; }
+.pills { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+.pill {
+  display: inline-block; background: #F1F5F9; border: 1px solid #CBD5E1;
+  border-radius: 20px; padding: 5px 16px; font-size: .85em; color: #475569;
+}
+.bloc-center .bloc-num, .bloc-center h1, .bloc-center .bloc-sub, .bloc-center .pill {
+  opacity: 0; transform: translateY(15px);
+}
+/* section.present = la slide affichée : l'animation repart à chaque arrivée */
+section.present .bloc-center .bloc-num { animation: rdRise .5s ease 0s forwards; }
+section.present .bloc-center h1        { animation: rdRise .5s ease .2s forwards; }
+section.present .bloc-center .bloc-sub { animation: rdRise .5s ease .4s forwards; }
+section.present .bloc-center .pill     { animation: rdRise .5s ease calc(.65s + var(--n, 0) * .15s) forwards; }
+.pill:nth-child(2) { --n: 1; } .pill:nth-child(3) { --n: 2; } .pill:nth-child(4) { --n: 3; }
+.pill:nth-child(5) { --n: 4; } .pill:nth-child(6) { --n: 5; } .pill:nth-child(7) { --n: 6; }
+
+@keyframes rdRise { to { opacity: 1; transform: none; } }
+@keyframes rdFade { to { opacity: 1; } }
+
+/* ── Apparition auto à l'arrivée sur la slide (sans clic) ──────────────────
+   <div class="rd-in" style="--d:1.2s">…</div>  → apparaît 1,2 s après l'arrivée */
+.rd-in { opacity: 0; }
+section.present .rd-in { animation: rdRise .45s ease var(--d, 0s) forwards; }
+
+/* ── Cible pilotée par fragment (data-show="id") ───────────────────────── */
+.rd-hidden { opacity: 0; transition: opacity .4s ease, transform .4s ease; transform: translateY(8px); }
+.rd-hidden.visible { opacity: 1; transform: none; }
+
+/* ── Barré animé (data-strike="id") ────────────────────────────────────── */
+.strikeable { position: relative; display: inline-block; transition: color .3s; }
+.strikeable::after {
+  content: ''; position: absolute; left: 0; top: 52%; height: 2px; width: 0;
+  background: currentColor; border-radius: 1px; opacity: .75;
+}
+.strikeable.struck { color: #94A3B8; }
+.strikeable.struck::after { animation: rdStrike .35s ease forwards; }
+@keyframes rdStrike { to { width: 100%; } }
+
+/* ── Déclencheurs invisibles (fragments générés par le moteur) ─────────── */
+.reveal .rd-trigger {
+  display: none !important; position: absolute; pointer-events: none;
+  width: 0; height: 0; overflow: hidden;
+}
+
+/* ── Indicateur « il reste des fragments sur cette slide » ─────────────── */
+#frag-indicator {
+  position: fixed; top: 12px; left: 16px; color: #EF4444; font-size: 1.6em; font-weight: 900;
+  z-index: 1000; opacity: 0; transition: opacity .25s; pointer-events: none; line-height: 1; user-select: none;
+}
+.reveal:has(.present .fragment:not(.visible)) #frag-indicator { opacity: 1; }
+
+/* ── Popups ────────────────────────────────────────────────────────────── */
+.popup-overlay {
+  --pop-bg: #FEF3C7; --pop-border: #D97706; --pop-ink: #92400E; --pop-code: #FED7AA;
+  position: fixed; z-index: 999; max-width: 360px;
+  background: var(--pop-bg); border: 2px solid var(--pop-border); color: var(--pop-ink);
+  border-radius: 10px; padding: 14px 34px 14px 22px; font-size: 21px; line-height: 1.7;
+  font-family: var(--rd-font); box-shadow: 0 4px 16px rgba(0,0,0,.18);
+  /* caché sans display:none → la transition de sortie se joue, pas de timer */
+  visibility: hidden; opacity: 0; transform: translateX(30px);
+  transition: opacity .35s ease, transform .35s ease, visibility 0s linear .35s;
+}
+.popup-overlay.popup-visible {
+  visibility: visible; opacity: 1; transform: none;
+  transition: opacity .35s ease, transform .35s ease, visibility 0s;
+}
+.popup--top-right    { top: 24px;    right: 32px; }
+.popup--top-left     { top: 24px;    left: 32px;  transform: translateX(-30px); }
+.popup--bottom-right { bottom: 24px; right: 32px; }
+.popup--bottom-left  { bottom: 24px; left: 32px;  transform: translateX(-30px); }
+.popup--italic { font-style: italic; }
+
+/* Thèmes — cf. conventions couleurs : info / warn / tip / good (+ dark) */
+.popup--info { --pop-bg: #EFF6FF; --pop-border: #1D4ED8; --pop-ink: #1E3A8A; --pop-code: #DBEAFE; }
+.popup--warn { --pop-bg: #FFF7ED; --pop-border: #EA580C; --pop-ink: #7C2D12; --pop-code: #FED7AA; }
+.popup--tip  { --pop-bg: #FEF3C7; --pop-border: #D97706; --pop-ink: #92400E; --pop-code: #FDE68A; }
+.popup--good { --pop-bg: #F0FDF4; --pop-border: #16A34A; --pop-ink: #14532D; --pop-code: #DCFCE7; }
+.popup--dark {
+  --pop-bg: #0D1117; --pop-border: #238636; --pop-ink: #39D353; --pop-code: #161B22;
+  font-family: var(--rd-mono); font-size: 15px; line-height: 1.9;
+  box-shadow: 0 4px 24px rgba(35,134,54,.35);
+}
+
+.popup-overlay code {
+  background: var(--pop-code); color: inherit; padding: 2px 6px; border-radius: 4px;
+  font-size: .92em; font-family: var(--rd-mono);
+}
+.popup-overlay code.block { display: block; margin: 3px 0; font-size: .85em; }
+.popup-overlay code.block.green { background: #DCFCE7; }
+.popup-overlay strong { color: inherit; }
+
+.popup-close {
+  position: absolute; top: 6px; right: 8px; background: none; border: none; cursor: pointer;
+  font-size: 22px; color: var(--pop-ink); opacity: .5; line-height: 1;
+}
+.popup-close:hover { opacity: 1; }
+
+.popup-more-hint { font-size: .72em; opacity: .55; display: block; margin-top: 5px; }
+.popup-overlay.expanded .popup-more-hint { display: none; }
+.popup-body { display: none; margin-top: 10px; }
+.popup-overlay.expanded .popup-body { display: block; }
+/* machine à écrire : délai par mot calculé à partir de --i (posé au build) */
+.popup-body .tw { opacity: 0; }
+.popup-overlay.expanded .popup-body .tw {
+  animation: rdFade .05s linear calc(var(--i) * var(--rd-tw-step)) forwards;
+}
+
+/* ── Bouton vue défilement / présentation ─────────────────────────────── */
+#view-toggle {
+  position: fixed; bottom: 16px; right: 16px; z-index: 9999;
+  background: var(--rd-ink); color: #F1F5F9; border: none; border-radius: 8px;
+  padding: 7px 13px; font-size: 13px; font-family: var(--rd-font); cursor: pointer;
+  opacity: .75; transition: opacity .2s; display: flex; align-items: center; gap: 6px;
+}
+#view-toggle:hover { opacity: 1; }
+
+/* ── Motifs visuels (v-*) ──────────────────────────────────────────────────
+   Un motif par FORME d'idée (voir SKILL.md « Visuel par défaut »,
+   extraits dans reference/techniques.md §13). Révéler au clic en ajoutant
+   class="fragment" sur les morceaux, dans l'ordre du raisonnement.        */
+:root {
+  --rd-soft: #EFF4FB;  --rd-line: #2D5FA6;  --rd-core: #16325C;
+  --rd-ok: #1F7A4D;    --rd-ok-soft: #E3F3E8;
+  --rd-warn: #B86A00;  --rd-warn-soft: #FFE6A8;
+  --rd-ko: #A33A3A;    --rd-ko-soft: #FBE9E9;
+}
+.reveal .v-box { background: var(--rd-soft); border: 2px solid var(--rd-line); border-radius: 12px;
+  padding: .5em .7em; text-align: center; font-size: .9em; line-height: 1.3; }
+.reveal .v-box small, .reveal .v-sub { display: block; color: var(--rd-muted); font-size: .78em; font-style: italic; margin-top: .2em; }
+.reveal .v-key  { background: var(--rd-warn-soft); border-color: var(--rd-warn); }
+.reveal .v-ok   { background: var(--rd-ok-soft);   border-color: var(--rd-ok); color: var(--rd-ok); font-weight: 700; }
+.reveal .v-ko   { background: var(--rd-ko-soft);   border-color: var(--rd-ko); }
+.reveal .v-arrow { color: var(--rd-line); font-size: 1.6em; font-weight: 700; line-height: 1; align-self: center; text-align: center; }
+.reveal .v-caption { text-align: center; color: var(--rd-muted); font-size: .85em; margin-top: .8em; }
+.reveal .v-caption b, .reveal .v-caption strong { color: var(--rd-ink); }
+
+/* Flux : étapes, cause → effet */
+.reveal .v-flow { display: flex; align-items: stretch; gap: .5em; justify-content: center; }
+.reveal .v-flow > .v-box { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.reveal .v-flow.vertical { flex-direction: column; align-items: center; }
+.reveal .v-flow.vertical > .v-box { width: 70%; }
+
+/* Duel : opposition / écart, puis issue */
+.reveal .v-duel { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .6em; }
+.reveal .v-vs { font-size: 2em; font-weight: 800; color: var(--rd-ko); }
+.reveal .v-options { display: flex; gap: .6em; justify-content: center; flex-wrap: wrap; }
+.reveal .v-options > * { background: var(--rd-warn-soft); border: 2px dashed var(--rd-warn); border-radius: 999px;
+  padding: .2em .8em; font-size: .85em; }
+
+/* Jauges : quantité, niveau, minimum */
+.reveal .v-meters { display: flex; flex-direction: column; gap: .5em; }
+.reveal .v-meter { display: grid; grid-template-columns: 9em 1fr 6em; align-items: center; gap: .7em; font-size: .9em; }
+.reveal .v-meter b { color: var(--rd-core); }
+.reveal .v-bar { height: .7em; background: #D8DEE8; border-radius: 999px; overflow: hidden; }
+.reveal .v-bar::after { content: ""; display: block; height: 100%; width: var(--v, 50%); background: var(--rd-line); }
+.reveal .v-meter.result { background: var(--rd-warn-soft); border: 2px solid var(--rd-warn); border-radius: 10px; padding: .3em .5em; }
+.reveal .v-meter.result .v-bar::after { background: var(--rd-warn); }
+/* Couleur = sens, identique dans tout le deck : vert = un fait, orange = à confirmer / probable,
+   gris = faible. « Variable » (ça dépend) n'est PAS « faible » : barre pleine hachurée, pas courte. */
+.reveal .v-bar.ok::after  { background: var(--rd-ok); }
+.reveal .v-bar.mid::after { background: var(--rd-warn); }
+.reveal .v-bar.low::after { background: var(--rd-muted); }
+.reveal .v-bar.var::after { width: 100%; background: repeating-linear-gradient(-45deg, var(--rd-muted) 0 8px, transparent 8px 16px); }
+
+/* Frise : étapes dans le temps — chaque point porte son libellé */
+.reveal .v-timeline { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; position: relative; width: 100%; }
+.reveal .v-timeline::before { content: ""; position: absolute; left: 8%; right: 8%; top: 1.1em; height: 4px; background: #D8DEE8; }
+.reveal .v-stop { display: flex; flex-direction: column; align-items: center; gap: .2em; position: relative; }
+.reveal .v-dot { width: 2.2em; height: 2.2em; border-radius: 50%; background: #fff; border: 3px solid #D8DEE8;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--rd-muted); }
+.reveal .v-stop small { font-size: .7em; color: var(--rd-muted); text-align: center; line-height: 1.2; max-width: 9em; }
+.reveal .v-stop.ok .v-dot  { border-color: var(--rd-ok);   background: var(--rd-ok-soft);   color: var(--rd-ok); }
+.reveal .v-stop.key .v-dot { border-color: var(--rd-warn); background: var(--rd-warn-soft); color: var(--rd-warn); }
+
+/* Tâches et responsables : la case « qui ? » vide rend visible un manque de porteur */
+.reveal .v-tasks { border: 2px solid var(--rd-line); border-radius: 12px; overflow: hidden; background: #fff; width: 100%; }
+.reveal .v-tasks-head { display: flex; justify-content: space-between; background: var(--rd-soft); padding: .3em .8em;
+  font-size: .7em; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--rd-line); }
+.reveal .v-task { display: grid; grid-template-columns: 1.6em 1fr auto; gap: .6em; align-items: center; padding: .45em .8em;
+  border-top: 1px solid #D8DEE8; font-size: .85em; text-align: left; }
+.reveal .v-owner { border: 2px solid var(--rd-ok); color: var(--rd-ok); border-radius: 999px; padding: .1em .6em; font-weight: 700; white-space: nowrap; }
+.reveal .v-owner.empty { border-style: dashed; border-color: var(--rd-ko); color: var(--rd-ko); }
+
+/* Porte : critères de passage d'une étape à la suivante (go / no-go) */
+.reveal .v-gate { display: grid; grid-template-columns: 1.5fr 5em 1fr; gap: .7em; align-items: stretch; width: 100%; }
+.reveal .v-gate-side { display: flex; flex-direction: column; gap: .4em; border: 2px solid var(--rd-ok); border-radius: 14px; padding: .6em .7em; background: #fff; }
+.reveal .v-gate-side.next { border-color: var(--rd-line); border-style: dashed; justify-content: center; }
+.reveal .v-gate-door { display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-left: 5px solid var(--rd-core); border-right: 5px solid var(--rd-core); color: var(--rd-ok); font-weight: 700; font-size: .8em; }
+
+/* Iceberg : ce qu'on voit / ce qu'on ne voit pas */
+.reveal .v-ice { display: flex; flex-direction: column; width: 100%; }
+.reveal .v-ice-sky { position: relative; display: flex; justify-content: center; }
+.reveal .v-ice-water { position: relative; display: flex; justify-content: center; background: rgba(45,95,166,.13);
+  border-top: 3px dashed var(--rd-line); border-radius: 0 0 14px 14px; padding-bottom: .5em; }
+.reveal .v-ice-label { position: absolute; left: .6em; top: .4em; max-width: 7em; line-height: 1.2; font-size: .7em;
+  font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--rd-line); text-align: left; }
+.reveal .v-ice-tipwrap { width: 38%; filter: drop-shadow(0 0 1px var(--rd-line)) drop-shadow(0 0 1px var(--rd-line)); }
+.reveal .v-ice-tip { background: var(--rd-soft); clip-path: polygon(24% 0, 76% 0, 100% 100%, 0 100%);
+  padding: 1em 2em .6em; display: flex; flex-direction: column; align-items: center; font-weight: 700; color: var(--rd-core); font-size: .9em; }
+.reveal .v-ice-mass { width: 76%; background: #fff; clip-path: polygon(0 0, 100% 0, 92% 100%, 8% 100%);
+  padding: .6em 4em 1em; display: flex; flex-direction: column; gap: .35em; text-align: left; font-size: .85em; }
+.reveal .v-ice-mass small { display: block; color: var(--rd-muted); font-size: .8em; }
+
+/* Idée reçue → réalité */
+.reveal .v-myths { display: grid; grid-template-columns: repeat(2, 1fr); gap: .7em; }
+.reveal .v-myth { background: var(--rd-ok-soft); border: 1px solid #C9E4D2; border-radius: 12px; padding: .5em .8em; text-align: left; }
+.reveal .v-belief { color: var(--rd-ko); text-decoration: line-through; font-size: .8em; }
+.reveal .v-belief::before { content: "✗ "; text-decoration: none; display: inline-block; }
+.reveal .v-reality { color: var(--rd-ink); font-size: .9em; margin-top: .2em; }
+
+/* Étages : couches, hiérarchie (écrire du haut vers le bas) */
+.reveal .v-stack { display: flex; flex-direction: column; gap: .35em; align-items: center; }
+.reveal .v-stack > .v-box { width: 100%; display: grid; grid-template-columns: 1fr 2fr; text-align: left; align-items: center; }
+.reveal .v-stack > .v-box:nth-child(2) { width: 90%; }
+.reveal .v-stack > .v-box:nth-child(3) { width: 80%; }
+.reveal .v-stack > .v-box:nth-child(4) { width: 70%; }
+
+/* Entonnoir : plusieurs entrées, un même traitement */
+.reveal .v-funnel { display: grid; grid-template-columns: 1.4fr auto auto auto 1fr; align-items: center; gap: .6em; }
+.reveal .v-inputs { display: flex; flex-direction: column; gap: .4em; }
+.reveal .v-core { background: var(--rd-core); color: #fff; font-weight: 800; letter-spacing: .06em; border-radius: 14px;
+  padding: 1.2em .9em; box-shadow: 0 0 0 6px var(--rd-soft); text-align: center; }
+
+/* Panneaux : deux idées démontrées côte à côte */
+.reveal .v-panels { display: grid; grid-template-columns: repeat(2, 1fr); gap: .9em; text-align: left; }
+.reveal .v-panel { background: var(--rd-soft); border: 2px solid var(--rd-line); border-radius: 14px; padding: .7em .9em;
+  display: flex; flex-direction: column; gap: .45em; }
+.reveal .v-panel h3 { margin: 0 0 .2em; font-size: 1.05em; color: var(--rd-core); }
+
+/* Cartes : seulement pour des éléments vraiment indépendants */
+.reveal .v-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(10em, 1fr)); gap: .7em; text-align: left; }
+.reveal .v-card { background: var(--rd-soft); border-top: 5px solid var(--rd-line); border-radius: 12px; padding: .6em .8em; font-size: .85em; }
+.reveal .v-card .v-icon { font-size: 1.6em; display: block; }
+.reveal .v-card strong:first-of-type { display: block; color: var(--rd-core); font-size: 1.1em; margin: .2em 0; }
+
+/* ── Sommaire en vignettes texte (touche O) ─────────────────────────────── */
+#rd-sommaire { position: fixed; inset: 0; z-index: 9000; display: none; overflow: auto; padding: 24px;
+  background: #F1F4F8; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; align-content: start; }
+#rd-sommaire.open { display: grid; }
+.rd-thumb { background: #fff; border: 2px solid #D8DEE8; border-radius: 10px; padding: 12px 14px; min-height: 88px;
+  text-align: left; font: 15px/1.3 var(--rd-font); color: var(--rd-ink); cursor: pointer; }
+.rd-thumb:hover { border-color: var(--rd-link); }
+.rd-thumb.current { border-color: var(--rd-accent); box-shadow: 0 0 0 3px rgba(217,119,6,.18); }
+.rd-thumb b { display: block; color: var(--rd-link); font-size: 13px; margin-bottom: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .popup-overlay, .rd-hidden { transition: none; }
+  section.present .rd-in, section.present .bloc-center *,
+  .popup-overlay.expanded .popup-body .tw { animation-duration: .01s; animation-delay: 0s; }
+}
+
+/* ── deck.css ── */
+/* Deck « Scale Center » — habillage SLDS, 100 % hors ligne (polices système) */
+:root {
+  --rd-accent: #0176d3;
+  --sc-navy: #032d60;
+  --sc-blue: #0176d3;
+  --sc-sky: #eef4ff;
+  --sc-red: #ba0517;
+  --sc-green: #2e844a;
+  --sc-orange: #dd7a01;
+  --rd-tw-step: 26ms;
+}
+.reveal { font-size: 28px; font-family: "Segoe UI", "Salesforce Sans", system-ui, Arial, sans-serif; color: #181818; }
+.reveal h1, .reveal h2, .reveal h3 { font-family: inherit; color: var(--sc-navy); text-transform: none; letter-spacing: -.01em; }
+.reveal h2 { font-size: 1.55em; margin-bottom: .45em; }
+.reveal .slides section { text-align: left; }
+.reveal .slides section .bloc-center { text-align: center; }
+.reveal code { font-family: Consolas, "Cascadia Mono", monospace; }
+.reveal .kicker { font-size: .5em; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--sc-blue); margin: 0 0 .2em; }
+.reveal .lead { font-size: .8em; color: #3e3e3c; margin-top: -.2em; }
+.reveal .src { position: absolute; bottom: -2.2em; left: 0; font-size: .4em; color: #706e6b; }
+.reveal .big { font-size: 2.6em; font-weight: 800; color: var(--sc-navy); line-height: 1; }
+.reveal .bad { color: var(--sc-red); font-weight: 700; }
+.reveal .good { color: var(--sc-green); font-weight: 700; }
+.reveal .muted { color: #706e6b; }
+
+/* Bouton « Démo » vers la maquette */
+.reveal a.demo {
+  position: absolute; right: 0; bottom: -2em; font-size: .5em; font-weight: 700;
+  background: var(--sc-navy); color: #ffd76a !important; border-radius: 999px; padding: .35em .95em;
+  text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,.25);
+}
+.reveal a.demo:hover { background: var(--sc-blue); color: #fff !important; }
+.reveal a.demo.inline { position: static; display: inline-block; margin: .3em .3em 0 0; }
+
+/* Carte d'identité d'org */
+.reveal .org-card { display: grid; grid-template-columns: auto 1fr; gap: .25em 1em; font-size: .7em; background: var(--sc-sky); border-left: 6px solid var(--sc-blue); border-radius: 8px; padding: .8em 1.1em; margin: .6em auto 0; max-width: 820px; text-align: left; }
+.reveal .org-card b { color: var(--sc-navy); }
+
+/* Tableaux */
+.reveal table.sc { font-size: .66em; border-collapse: collapse; width: 100%; margin: .4em 0; }
+.reveal table.sc th { background: #f3f3f3; color: var(--sc-navy); text-align: left; padding: .45em .6em; border-bottom: 2px solid #dddbda; }
+.reveal table.sc td { padding: .42em .6em; border-bottom: 1px solid #ececec; vertical-align: top; }
+.reveal table.sc td.yes { color: var(--sc-green); font-weight: 700; }
+.reveal table.sc td.no { color: var(--sc-red); }
+
+/* Code avant / après */
+.reveal .code-duo { display: grid; grid-template-columns: 1fr 1fr; gap: .6em; font-size: .5em; }
+.reveal .code-duo pre { margin: 0; width: 100%; box-shadow: none; font-size: 1em; line-height: 1.45; background: #f3f3f3; border-left: 5px solid var(--sc-red); padding: .6em .8em; white-space: pre; overflow: hidden; }
+.reveal .code-duo pre.fix { border-left-color: var(--sc-green); }
+.reveal .code-duo .lbl { font-size: 1.1em; margin-bottom: .2em; }
+
+/* Duel inversé (slide Query Plan) */
+.reveal .qp { font-size: .8em; text-align: left; }
+.reveal .qp .v-box { min-height: 7.5em; }
+.reveal .trophy { font-size: 2.2em; text-align: center; margin-top: .2em; }
+
+/* Row lock : blocker / waiters */
+.reveal .lock { font-size: .78em; display: grid; grid-template-columns: 1fr auto 1fr; gap: .4em 1em; align-items: center; }
+.reveal .lock .rec { grid-row: span 4; background: #fef1ee; border: 3px solid var(--sc-red); border-radius: 10px; padding: .8em; text-align: center; font-weight: 700; }
+.reveal .lock .who { background: #f3f3f3; border-radius: 8px; padding: .45em .7em; }
+.reveal .lock .who.blocker { background: #fff3c4; border: 2px solid var(--sc-orange); }
+
+/* Petite grille d'écrans (tour des Insights) */
+.reveal .v-cards { font-size: .82em; }
+.reveal .placeholder { border: 3px dashed #c9c9c9; border-radius: 12px; padding: 1em; color: #706e6b; font-size: .8em; text-align: center; }
+
+/* lisibilité projecteur : légendes de cases un peu plus grandes */
+.reveal .v-box small { font-size: .82em; }
+.reveal .kicker { font-size: .48em; }
+
+/* ajustements après captures */
+.reveal .v-myths.solo { grid-template-columns: 1fr; }
+.reveal .v-panel .v-meter { grid-template-columns: 5em 1fr 4em; }
+.reveal .qp .v-box small { font-size: 1em; font-style: normal; color: #3e3e3c; line-height: 1.45; }
+.reveal a.demo.inline { font-size: .55em; }
+
+/* ===== Captures annotées (partie 1 « la visite » et partie 2 « les enquêtes ») ===== */
+.reveal .crumb { position: absolute; top: -1.6em; right: 0; font-size: .44em; color: #3e3e3c; background: #f3f3f3; border: 1px solid #dddbda; border-radius: 999px; padding: .3em .9em; }
+.reveal .crumb b { color: var(--sc-blue); }
+.reveal .tour { display: grid; grid-template-columns: 1.85fr 1fr; gap: .7em; align-items: start; margin-top: .2em; }
+.reveal .tour.wide { grid-template-columns: 2.4fr 1fr; }
+.reveal .shots { display: flex; flex-direction: column; gap: .35em; align-items: flex-start; }
+.reveal .shots.row { flex-direction: row; align-items: flex-start; }
+.reveal .shot { position: relative; display: inline-block; line-height: 0; border: 1px solid #c9c9c9; border-radius: 6px; box-shadow: 0 3px 12px rgba(0,0,0,.18); background: #fff; }
+.reveal .shot img { display: block; margin: 0; max-width: 100%; max-height: var(--mh, 500px); border-radius: 6px; }
+.reveal .shot .mk { position: absolute; border: 3px solid #ff8a00; border-radius: 6px; box-shadow: 0 0 0 2px rgba(255,255,255,.85), 0 0 14px rgba(255,138,0,.55); background: rgba(255,200,0,.08); pointer-events: none; }
+.reveal .shot .mk::before { content: attr(data-n); position: absolute; left: -.75em; top: -.75em; width: 1.5em; height: 1.5em; line-height: 1.5em; text-align: center; border-radius: 50%; background: #ff8a00; color: #fff; font-weight: 800; font-size: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+.reveal ol.legend { list-style: none; margin: 0; padding: 0; font-size: .58em; line-height: 1.35; }
+.reveal ol.legend li { display: grid; grid-template-columns: 1.6em 1fr; gap: .45em; margin: 0 0 .65em; }
+.reveal ol.legend li > b:first-child { width: 1.5em; height: 1.5em; line-height: 1.5em; text-align: center; border-radius: 50%; background: #ff8a00; color: #fff; font-size: .9em; }
+.reveal ol.legend li.key { background: #fff3c4; border-radius: 8px; padding: .3em .4em; margin-left: -.4em; }
+.reveal .what { font-size: .62em; color: #3e3e3c; margin: -.3em 0 .5em; }
+.reveal .what b { color: var(--sc-navy); }
+
+/* Frise du processus d'analyse (partie 2) */
+.reveal .process { display: flex; gap: .3em; align-items: center; font-size: .46em; margin: -.2em 0 .5em; flex-wrap: wrap; }
+.reveal .process span { padding: .25em .8em; border-radius: 999px; background: #f3f3f3; color: #706e6b; border: 1px solid #dddbda; }
+.reveal .process span.done { background: #eef4ff; color: var(--sc-blue); border-color: #b8d4f5; }
+.reveal .process span.on { background: var(--sc-navy); color: #ffd76a; border-color: var(--sc-navy); font-weight: 700; }
+.reveal .process i { color: #c9c9c9; font-style: normal; }
+.reveal .qa { font-size: .62em; }
+.reveal .qa .q { color: #706e6b; font-style: italic; margin-bottom: .3em; }
+.reveal .qa .a { font-weight: 700; color: var(--sc-navy); margin-bottom: .6em; }
+
+/* 16:9 (1280×720) : les captures prennent la place disponible */
+.reveal h2 { margin-bottom: .25em; }
+.reveal .what { margin: -.2em 0 .35em; }
+.reveal .tour { grid-template-columns: minmax(0, 1fr) 320px; gap: .8em; }
+.reveal .tour.wide { grid-template-columns: minmax(0, 1fr) 300px; }
+.reveal .shots { width: 100%; }
+.reveal .shot img { max-height: min(calc(var(--mh, 500px) * 1.12), 540px); }
+
+/* Correction manuscrite dans un titre (« Une minute » barré → « 2 secondes ! ») */
+.reveal .fix-wrap { position: relative; display: inline-block; }
+.reveal .fix-note { position: absolute; left: 50%; top: -1.05em; transform: translateX(-50%) rotate(-5deg); white-space: nowrap;
+  font-family: "Segoe Print", "Comic Sans MS", cursive; color: #ba0517; font-size: .6em; font-weight: 700; }
+.reveal .fix-note.visible { transform: translateX(-50%) rotate(-5deg); }
+.reveal .fix-note small { font-size: .7em; color: #706e6b; }
+
+/* « View Details » en surimpression sur la slide */
+.reveal .zoom { position: absolute; left: 4%; right: 4%; top: 3.2em; z-index: 20; background: #fff; border: 2px solid var(--sc-blue);
+  border-radius: 12px; padding: .5em .7em .7em; box-shadow: 0 18px 50px rgba(3,45,96,.45); transform: scale(.85); text-align: center; }
+.reveal .zoom.visible { transform: none; transition: opacity .35s ease, transform .35s cubic-bezier(.2,1.3,.4,1); }
+.reveal .zoom.gone { display: none; }
+.reveal .zoom-head { font-size: .55em; text-align: left; color: #3e3e3c; margin-bottom: .35em; }
+.reveal .zoom .shot img { max-height: 470px; }
+
+/* légende dans les surimpressions View Details */
+.reveal .zoom { left: 2%; right: 2%; }
+.reveal .zoom-body { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: .7em; align-items: start; text-align: left; }
+.reveal .zoom-body .shot img { max-height: 470px; }
+.reveal .zoom-body ol.legend { margin-top: .3em; }
+
+/* capture superposée au clic (même cadrage, cf. box_from) */
+.reveal .shot img.over { position: absolute; left: 0; top: 0; width: 100%; height: 100%; max-height: none; }
+
+/* capture secondaire qui se pose par-dessus la première au clic */
+.reveal .shots { position: relative; }
+.reveal .shot.pop { position: absolute; left: 4%; top: 12%; z-index: 12; border: 2px solid var(--sc-blue); box-shadow: 0 16px 44px rgba(3,45,96,.45); }
+.reveal .shot.pop ~ .shot.pop { left: 8%; top: 22%; }
+.reveal .shot.pop { max-width: 92%; }
+
+/* 16:9 : cartes sur 3 colonnes (6 cartes = 2 rangées propres) */
+.reveal .v-cards { grid-template-columns: repeat(3, 1fr); }
+
+/* bulle propre à une slide (ordre de clic maîtrisé), même look qu'une popup « warn » */
+.reveal .note-pop { position: absolute; right: 0; bottom: 1em; width: 34%; z-index: 15; font-size: .52em; line-height: 1.5; text-align: left;
+  background: #fff4e5; color: #7a3b00; border: 2px solid #dd7a01; border-radius: 10px; padding: .8em 1em; box-shadow: 0 10px 28px rgba(0,0,0,.25); }
+.reveal .note-pop.gone { display: none; }
+
+/* Ring de boxe : le senior met K.O. l'IA */
+.reveal .ring { position: absolute; left: 3%; right: 3%; top: 3.4em; height: 13.5em; z-index: 20; display: grid; grid-template-columns: 1fr auto 1fr; gap: 1em; align-items: center;
+  background: radial-gradient(ellipse at center, #fff8e1 0%, #fde3a7 70%); border: 6px solid #b71c1c; border-radius: 14px; padding: 1em 1.4em; box-shadow: 0 18px 50px rgba(0,0,0,.4);
+  outline: 3px solid #fff; outline-offset: -14px; }
+.reveal .ring .corner { text-align: center; font-size: .7em; }
+.reveal .ring .corner b { display: block; font-size: 1.5em; }
+.reveal .ring .corner small { display: block; color: #706e6b; }
+.reveal .ring .boxer { font-size: 3.2em; line-height: 1.1; }
+.reveal .ring .red b { color: #b71c1c; } .reveal .ring .blue b { color: #0b5cab; }
+.reveal .ring .punch { margin-top: .5em; background: #fff; border-radius: 8px; padding: .4em .6em; font-size: .9em; box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+.reveal .ring .vs { font-size: 2.6em; }
+.reveal .ring .ko { position: absolute; left: 30%; top: 6%; font-size: 2.6em; font-weight: 900; color: #b71c1c; border: 8px solid #b71c1c; border-radius: 12px; padding: 0 .3em;
+  transform: rotate(-14deg) scale(2.4); opacity: 0; letter-spacing: .05em; background: rgba(255,255,255,.75); }
+.reveal .ring .ko.visible { animation: koStamp .45s cubic-bezier(.2,1.5,.4,1) forwards; }
+@keyframes koStamp { 0% { transform: rotate(-14deg) scale(2.4); opacity: 0; } 100% { transform: rotate(-14deg) scale(1); opacity: 1; } }
+.reveal .ring.visible .red .boxer { transition: transform .4s; }
+.reveal .ring:has(.ko.visible) .red .boxer { transform: rotate(-80deg) translateY(.2em); filter: grayscale(1); }
+.reveal .ring .ko-sub { position: absolute; left: 0; right: 0; bottom: .5em; text-align: center; font-size: .55em; font-style: italic; color: #5a3e00; }
+
+.reveal .ring.gone { display: none; }
+
+.reveal .ring.ring-intro { opacity: 1; }
+.reveal .ring.ring-intro.gone { display: none; }
+
+.reveal .note-pop.papy { z-index: 26; bottom: 2.2em; right: 4%; width: 36%; background: #fffbe6; color: #3e2c00; border-color: #f4b400; }
+.reveal .note-pop.papy { right: auto; left: 50%; transform: translateX(-50%); bottom: 2.4em; width: 56%; font-size: .48em; padding: .5em .9em; }
+.reveal .note-pop.papy br + br { display: none; }
+.reveal .note-pop.papy { bottom: .2em; }
+.reveal .note-pop.ept { width: 36%; bottom: .6em; background: #eef4ff; color: #032d60; border-color: #0176d3; font-size: .48em; }
+
+/* la bulle EPT s'agrandit quand les explications arrivent */
+.reveal #n-ept-more.rd-hidden { max-height: 0; overflow: hidden; transform: none; transition: max-height .6s ease, opacity .5s ease .15s; }
+.reveal #n-ept-more.rd-hidden.visible { max-height: 22em; }
+.reveal .note-pop.ept { width: 47%; bottom: .2em; }
+.reveal .note-pop.ept { right: auto; bottom: auto; left: .5%; top: 4.3em; width: 64%; font-size: .44em; padding: .55em .9em; }
+.reveal .note-pop.ept { top: 9.8em; }
+.reveal .zoom .note-pop.pe { right: 1em; bottom: 1em; width: 30%; z-index: 30; }
+.reveal .zoom-body .shots { display: flex; flex-direction: column; }
+#t-2s::before { content: "2 secondes ! "; }
+#t-2s::after { content: "(merci qui ?)"; font-size: .7em; color: #706e6b; }
+
+/* ── Slide d'intro : titre au centre, 6 infos clés en orbite ───────────── */
+.intro { display: grid; grid-template-columns: minmax(0,1fr) 320px minmax(0,1fr); gap: 30px; align-items: center; height: 640px; }
+.it-col { display: flex; flex-direction: column; gap: 18px; }
+.it-center { text-align: center; }
+.it-center .bloc-num { margin-bottom: 6px; font-size: .5em; white-space: nowrap; letter-spacing: .15em; }
+.it-center h1 { font-size: 2.4em; color: var(--rd-ink); margin: 0 0 .1em; line-height: 1.05; }
+.it-sub { color: var(--rd-muted); font-size: .72em; white-space: nowrap; margin: 0; }
+.it-pills { display: flex; gap: 8px; justify-content: center; margin-top: 22px; }
+.it-pills span { background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 20px; padding: 4px 14px; font-size: .62em; color: #475569; white-space: nowrap; }
+.it-tile { position: relative; display: flex; gap: 12px; align-items: center; background: #fff; border: 1px solid #CBD5E1;
+  border-radius: 12px; padding: 10px; box-shadow: 0 4px 14px rgba(15,23,42,.08); text-align: left; }
+.it-r { flex-direction: row-reverse; text-align: right; }
+.it-tile::after { content: ""; position: absolute; top: 50%; width: 26px; border-top: 2px dashed #CBD5E1; }
+.it-l::after { right: -28px; } .it-r::after { left: -28px; }
+.it-cap { flex: 0 0 120px; height: 80px; border-radius: 6px; border: 1px solid #E2E8F0; background-size: 420px auto; background-repeat: no-repeat; }
+.it-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.it-txt b { font-size: .7em; color: var(--rd-ink); }
+.it-fig { font-size: .78em; font-weight: 700; color: var(--rd-accent); }
+.it-txt small { font-size: .55em; color: var(--rd-muted); }
+
+/* Slide « Le problème » : la plainte utilisateur, point de départ */
+.pb-quote { display: table; margin: 0 auto 22px; background: #FFF7ED; border: 2px solid #FDBA74; border-radius: 18px 18px 18px 4px;
+  padding: 10px 24px; font-size: 1.15em; font-style: italic; color: #9A3412; }
+
+/* Slide « L'idée reçue » : chaque croyance est barrée au clic, la réalité arrive à côté */
+.gm { display: flex; flex-direction: column; gap: 16px; margin-top: 1.4em; }
+.gm-row { display: grid; grid-template-columns: 1fr 50px 1.25fr; align-items: center; }
+.gm-belief { background: #FEF2F2; border: 2px solid #FCA5A5; border-radius: 12px; padding: 14px 18px; font-size: .85em; color: #991B1B;
+  text-align: left; transition: background .4s, border-color .4s, color .4s; }
+.gm-belief::before { content: "🤔 "; }
+.gm-arrow, .gm-reality { opacity: 0; transform: translateX(-14px); transition: opacity .45s ease .3s, transform .45s ease .3s; }
+.gm-arrow { text-align: center; font-size: 1.3em; color: var(--rd-muted); }
+.gm-reality { background: var(--rd-ok-soft); border: 2px solid #86C99A; border-radius: 12px; padding: 14px 18px; font-size: .85em; font-weight: 600; text-align: left; color: #14532D; }
+.gm-row.busted .gm-belief { background: #F8FAFC; border-color: #E2E8F0; color: #94A3B8; }
+.gm-row.busted .gm-belief::before { content: "✗ "; color: #DC2626; }
+.gm-row.busted .gm-arrow, .gm-row.busted .gm-reality { opacity: 1; transform: none; }
+#gratuit .fix-note { color: #15803D; top: -1.15em; }
+
+/* Slide « D'où viennent les données » : P75 démontré sur 4 utilisateurs */
+.p75 { margin-top: 1.1em; border-top: 1px dashed #CBD5E1; padding-top: .7em; text-align: left; }
+.p75-head { font-size: .8em; color: var(--rd-ink); }
+.p75-axis { position: relative; height: 150px; margin: 0 30px 0 20px; }
+.pa-line { position: absolute; left: 0; right: 0; top: 70px; border-top: 2px solid #94A3B8; }
+.pa-tick { position: absolute; left: var(--x); top: 74px; transform: translateX(-50%); font-size: .5em; color: var(--rd-muted); }
+.pa-tick::before { content: ""; position: absolute; left: 50%; top: -6px; height: 6px; border-left: 2px solid #94A3B8; }
+.pa-user { position: absolute; left: var(--x); bottom: 75px; width: 0; white-space: nowrap; display: flex; flex-direction: column; align-items: center;
+  font-size: .9em; line-height: 1.1; transition: left .6s ease; }
+.pa-user::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #475569; margin-top: 4px; }
+.pa-user small { font-size: .5em; color: var(--rd-muted); }
+.pa-user.slow small { color: #B45309; font-weight: 700; } .pa-user.angry small { color: #B91C1C; font-weight: 700; }
+.pa-mk { position: absolute; left: var(--x); top: 70px; width: 0; white-space: nowrap; display: flex; flex-direction: column; align-items: center; transition: left .7s ease; }
+.pa-mk::before { content: ""; width: 0; height: var(--h, 30px); border-left: 3px solid var(--c); }
+.pa-mk b { background: var(--c); color: #fff; border-radius: 12px; padding: 2px 10px; font-size: .55em; white-space: nowrap; }
+.pa-mk.avg { --c: #64748B; --h: 44px; } .pa-mk.med { --c: #64748B; --h: 58px; } .pa-mk.p75m { --c: #D97706; --h: 26px; }
+.pa-mk.p75m b { font-size: .65em; box-shadow: 0 0 0 4px var(--rd-warn-soft); }
+.pa-mk i, .pa-user i { font-style: normal; }
+.pa-v30, .pa-v60 { display: none; }
+.p75-axis.s30 .pa-v15 { display: none; } .p75-axis.s30 .pa-v30 { display: inline; }
+.p75-axis.s60 .pa-v30 { display: none; } .p75-axis.s60 .pa-v60 { display: inline; }
+.p75-axis.s30 .pa-user.angry { left: 89%; } .p75-axis.s60 .pa-user.angry { left: 97%; }
+.p75-axis.s30 .pa-mk.avg { left: 37.3%; } .p75-axis.s60 .pa-mk.avg { left: 65.4%; }
+.p75-axis.s30 .pa-mk.avg b { background: #EA580C; } .p75-axis.s60 .pa-mk.avg b { background: #DC2626; }
+.p75-row.test small b.pa-ev { color: #DC2626; }
+.pa-break { position: absolute; left: var(--x); top: 56px; width: 0; display: flex; justify-content: center; font-size: 1.1em; color: #94A3B8; background: #fff; }
+.p75-rows { display: flex; flex-direction: column; gap: 4px; }
+.p75-row { display: grid; grid-template-columns: 11em 1fr; align-items: baseline; gap: .6em; padding: 3px 10px; border-radius: 8px; font-size: .72em; }
+.p75-row > span { font-weight: 700; color: var(--rd-core); }
+.p75-row small { color: var(--rd-muted); font-size: .9em; }
+.p75-row.key { background: var(--rd-warn-soft); border: 2px solid var(--rd-warn); }
+.p75-row.key small, .p75-row.test small b { color: var(--rd-ink); }
+.p75-row.test { border: 2px dashed #CBD5E1; }
+
+/* Repères qui ne doivent pas masquer leur cible (bande de sélection étroite) */
+.reveal .shot .mk.mk-out { margin: -9px 0 0 -9px; padding: 9px; box-sizing: content-box; background: none; }
+.reveal .shot .mk.mk-left::before { left: -2em; top: 50%; transform: translateY(-50%); }
+.reveal .shot .mk.mk-tr::before { left: auto; right: -.75em; }
+.reveal .shot .mk.gone { display: none; }
+/* le repère du menu Start Analysis est mesuré ~17 px trop à droite : recalage */
+.reveal .shot .mk.mk-menu { margin-left: -27px; }
+/* même décalage de mesure sur la bande de sélection : recalage à gauche */
+.reveal .shot #mk-band { margin-left: -21px; }
+/* étiquette d'une capture superposée : dit d'où elle vient (onglet cliqué…) */
+.reveal .shot .pop-tag { position: absolute; left: -2px; bottom: 100%; background: var(--sc-blue); color: #fff; font-size: 13px; font-weight: 700;
+  padding: 3px 10px; border-radius: 6px 6px 0 0; white-space: nowrap; line-height: 1.4; }
+.reveal .shot .mk.mk-in-r::before { left: auto; right: 4px; top: 50%; transform: translateY(-50%); }
+/* Petit robot qui a toujours raison (popup « Indice » de l'enquête 1) */
+.pop-bot { display: flex; align-items: flex-end; gap: 8px; margin-top: 10px; }
+.pop-bot-face { font-size: 2.1em; line-height: 1; animation: botBob 1.6s ease-in-out infinite; }
+.pop-bot-say { position: relative; background: #EEF2FF; border: 2px solid #A5B4FC; color: #3730A3; border-radius: 12px 12px 12px 3px;
+  padding: 6px 10px; font-size: .85em; font-style: italic; }
+@keyframes botBob { 50% { transform: translateY(-4px) rotate(-6deg); } }
+
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="titre">
+<div class="intro">
+  <div class="it-col">
+  <div class="it-tile it-l rd-in" style="--d:.6s"><div class="it-cap" style="background-image:url(img/cons-slow.png);background-position:left top"></div><div class="it-txt"><b>Quel code est lent ?</b><span class="it-fig">WDF_ConsoController · 7,4 s</span><small>jusqu'à la classe et la ligne</small></div></div>
+  <div class="it-tile it-l rd-in" style="--d:.8s"><div class="it-cap" style="background-image:url(img/db-top.png);background-position:left top"></div><div class="it-txt"><b>Quelle requête coûte ?</b><span class="it-fig">ligne 58 · 84 % du temps</span><small>les SOQL les plus chères</small></div></div>
+  <div class="it-tile it-l rd-in" style="--d:1.0s"><div class="it-cap" style="background-image:url(img/dep-ba.png);background-position:left top"></div><div class="it-txt"><b>Qu'a dégradé le déploiement ?</b><span class="it-fig">App CPU +85 %</span><small>avant / après chaque mise en prod</small></div></div>
+  </div>
+  <div class="it-center">
+    <div class="bloc-num rd-in">Developer Group · Salesforce</div>
+    <h1 class="rd-in" style="--d:.15s">Scale Center</h1>
+    <p class="it-sub rd-in" style="--d:.3s">La prod a des choses à vous dire</p>
+    <div class="it-pills rd-in" style="--d:1.9s"><span>gratuit</span><span>déjà dans votre org</span></div>
+  </div>
+  <div class="it-col">
+  <div class="it-tile it-r rd-in" style="--d:1.2s"><div class="it-cap" style="background-image:url(img/lex-pages.png);background-position:left top"></div><div class="it-txt"><b>Quelle page fait attendre ?</b><span class="it-fig">page Contrat · 6,4 s</span><small>22 % du trafic utilisateur</small></div></div>
+  <div class="it-tile it-r rd-in" style="--d:1.4s"><div class="it-cap" style="background-image:url(img/gov-conc.png);background-position:left top"></div><div class="it-txt"><b>Quelle limite approche ?</b><span class="it-fig">Concurrent Apex · 78 %</span><small>avant l'erreur, pas après</small></div></div>
+  <div class="it-tile it-r rd-in" style="--d:1.6s"><div class="it-cap" style="background-image:url(img/ag-unused.png);background-position:left top"></div><div class="it-txt"><b>Quel code ne sert plus ?</b><span class="it-fig">104 méthodes mortes</span><small>et les doublons à factoriser</small></div></div>
+  </div>
+</div>
+<aside class="notes">Accueil · 1 h · tout est fictif (2 orgs inventées, captures d'une maquette) · les 6 questions auxquelles l'outil répond, avec des chiffres qu'on retrouvera dans la visite et les 2 enquêtes</aside>
+
+</section>
+<section id="probleme">
+<p class="kicker">Le problème</p>
+<h2>1,2 million de requêtes par jour. Où regarder en premier ?</h2>
+<div class="pb-quote rd-in" style="--d:.4s">💬 « C'est lent depuis hier… »</div>
+<div class="v-duel">
+  <div class="v-box fragment" data-fragment-index="1">😩 Sans Scale Center<small>debug logs, scripts SOQL,<br>tickets, intuition</small></div>
+  <div class="v-vs fragment" data-fragment-index="2">≠</div>
+  <div class="v-box fragment" data-fragment-index="2">🔎 Avec Scale Center<small>la plateforme a déjà mesuré :<br>quand, combien, quel code, quelle ligne</small></div>
+</div>
+<div class="v-arrow fragment" data-fragment-index="3">↓</div>
+<div class="v-box v-ok fragment" data-fragment-index="3">On part des chiffres de la prod, pas des impressions</div>
+<aside class="notes">Debug logs = 1 transaction, 1 utilisateur · Scale Center = toute l'org, déjà collecté</aside>
+
+</section>
+<section id="carte">
+<p class="kicker">La carte de l'outil</p>
+<h2>Surveiller, détecter, expliquer</h2>
+<div class="v-funnel">
+  <div class="v-inputs">
+    <div class="v-box">Le socle<small>Alerts · Org Overview · Org Performance</small></div>
+    <div class="v-box">9 Scale Insights<small>ApexGuru · Database · Deployment · Governor Limit · LEX · Report · Search · Multi-Framework</small></div>
+  </div>
+  <div class="v-arrow fragment" data-fragment-index="1">→</div>
+  <div class="v-core fragment" data-fragment-index="1">Performance<br>Analysis</div>
+  <div class="v-arrow fragment" data-fragment-index="2">→</div>
+  <div class="v-box v-key fragment" data-fragment-index="2">la classe, la méthode, la ligne<small>rapport ciblé sur une fenêtre de 30 min max</small></div>
+</div>
+<p class="v-caption fragment">Les Insights regardent <b>la semaine</b>, l'analyse zoome sur <b>30 minutes</b>.</p>
+<aside class="notes">Setup › Scale › Scale Center · c'est aussi l'ordre de la visite</aside>
+
+</section>
+<section id="gratuit">
+<p class="kicker">L'idée reçue</p>
+<h2>« Scale Center ? C'est <span class="fix-wrap"><span id="g-payant" class="strikeable">payant</span><span id="g-gratuit" class="rd-hidden fix-note">gratuit !</span></span>. »</h2>
+<div class="gm">
+  <div class="gm-row" id="gm1"><div class="gm-belief"><span id="gb1" class="strikeable">Réservé à Signature / Unlimited</span></div><div class="gm-arrow">→</div><div class="gm-reality">✓ Inclus : Unlimited, Enterprise, Professional, Signature</div></div>
+  <div class="gm-row" id="gm2"><div class="gm-belief"><span id="gb2" class="strikeable">Il faut le demander au support</span></div><div class="gm-arrow">→</div><div class="gm-reality">✓ Actif par défaut en prod et en sandbox Full</div></div>
+  <div class="gm-row" id="gm3"><div class="gm-belief"><span id="gb3" class="strikeable">Ça marche dans ma Dev sandbox</span></div><div class="gm-arrow">→</div><div class="gm-reality">✓ Non : ni Developer, ni Dev Pro, ni Partial Copy</div></div>
+</div>
+<span class="fragment rd-trigger" data-fragment-index="1" data-strike="gb1" data-add-class="gm1:busted"></span>
+<span class="fragment rd-trigger" data-fragment-index="2" data-strike="gb2" data-add-class="gm2:busted"></span>
+<span class="fragment rd-trigger" data-fragment-index="3" data-strike="gb3" data-add-class="gm3:busted"></span>
+<span class="fragment rd-trigger" data-fragment-index="4" data-strike="g-payant" data-show="g-gratuit"></span>
+<p class="src">Sources : help.salesforce.com « Scale Center » et « See What's New in Scale Center » (ouverture EE/PE fin 2025)</p>
+<aside class="notes">Faire lever les mains : « qui pense que… ? » avant chaque clic · message central : beaucoup l'ignorent · UE 2025, EE/PE fin 2025 · dernier clic : le titre se corrige</aside>
+
+</section>
+<section id="donnees">
+<p class="kicker">D'où viennent les données</p>
+<h2>La plateforme mesure déjà tout</h2>
+<div class="v-flow">
+  <div class="v-box">Télémétrie de la plateforme<small>chaque requête, transaction, erreur</small></div>
+  <div class="v-arrow fragment" data-fragment-index="1">→</div>
+  <div class="v-box fragment" data-fragment-index="1">≈ 2 h après activation<small>rien d'avant l'activation</small></div>
+  <div class="v-arrow fragment" data-fragment-index="2">→</div>
+  <div class="v-box v-key fragment" data-fragment-index="2">Rétention courte<small>déploiements 25 j · analyses 30 j</small></div>
+</div>
+<div class="p75 fragment" data-fragment-index="3">
+  <div class="p75-head">L'EPT est donné en <b>P75</b>. Exemple : 8 utilisateurs ouvrent la même page</div>
+  <div class="p75-axis" id="p75ax">
+    <div class="pa-line"></div><span class="pa-break" style="--x:77.5%">≈</span>
+    <span class="pa-tick" style="--x:0.0%">0 s</span><span class="pa-tick" style="--x:7.5%">1 s</span><span class="pa-tick" style="--x:15.0%">2 s</span><span class="pa-tick" style="--x:22.5%">3 s</span><span class="pa-tick" style="--x:37.5%">5 s</span><span class="pa-tick" style="--x:75.0%">10 s</span><span class="pa-tick" style="--x:81.0%">15 s</span><span class="pa-tick" style="--x:89.0%">30 s</span><span class="pa-tick" style="--x:97.0%">60 s</span>
+    <span class="pa-user " style="--x:7.5%">👤<small>× 4 · 1 s</small></span><span class="pa-user " style="--x:10.5%">👤<small>1,4</small></span><span class="pa-user " style="--x:13.5%">👤<small>1,8</small></span><span class="pa-user slow" style="--x:19.5%">🙁<small>2,6</small></span>
+    <span class="pa-user angry" style="--x:81.0%">😡<small><i class="pa-v15">15 s</i><i class="pa-v30">30 s</i><i class="pa-v60">60 s</i></small></span>
+    <span class="pa-mk avg fragment" data-fragment-index="4" style="--x:23.2%"><b>Moyenne <i class="pa-v15">3,1 s</i><i class="pa-v30">5,0 s</i><i class="pa-v60">8,7 s</i></b></span>
+    <span class="pa-mk med fragment" data-fragment-index="5" style="--x:9.0%"><b>P50 (médiane) 1,2 s</b></span>
+    <span class="pa-mk p75m fragment" data-fragment-index="6" style="--x:15.0%"><b>P75 2 s</b></span>
+  </div>
+  <div class="p75-rows">
+    <div class="p75-row fragment" data-fragment-index="4"><span>Moyenne</span><small>7 utilisateurs sur 8 ont attendu moins : c'est le 😡 qui tire tout vers le haut</small></div>
+    <div class="p75-row fragment" data-fragment-index="5"><span>P50 (médiane)</span><small>coupe en deux moitiés : 4 en dessous, 4 au-dessus… « tout va bien »</small></div>
+    <div class="p75-row key fragment" data-fragment-index="6"><span>P75</span><small><b>3 sur 4 sont sous les 2 s</b> : c'est ce chiffre qu'on fait baisser</small></div>
+    <div class="p75-row test fragment" data-fragment-index="7"><span>Le 😡 attend plus…</span><small>moyenne <b class="pa-ev">3,1</b> → <b class="pa-ev">5,0</b> <span class="fragment" data-fragment-index="8">→ <b class="pa-ev">8,7 s</b></span> · P50 et <b>P75 ne bougent pas</b> : on suit l'expérience, pas l'accident</small></div>
+  </div>
+</div>
+<span class="fragment rd-trigger" data-fragment-index="7" data-add-class="p75ax:s30"></span>
+<span class="fragment rd-trigger" data-fragment-index="8" data-add-class="p75ax:s60"></span>
+<aside class="notes">Activer AVANT d'en avoir besoin · exporter les PDF · P75 = la frontière entre les 3/4 les plus rapides et le 1/4 le plus lent : ce n'est le temps de personne, c'est un seuil (calcul type Excel CENTILE.INCLURE, 2,0 s ici) · lecture d'un écran : « page Contrat 6 380 ms » = 75 % des chargements en 6,4 s ou moins, le dernier quart est plus lent · on accepte quelques cas lents : le but est de faire baisser le P75 ; un cas extrême récurrent se voit ailleurs (erreurs, timeouts)</aside>
+<span class="fragment rd-trigger" data-popup-show="pop-p75"></span>
+<span class="fragment rd-trigger" data-popup-close="pop-p75"></span>
+</section>
+<section id="partie1">
+<div class="bloc-center">
+  <div class="bloc-num">Partie 1</div>
+  <h1>La visite</h1>
+  <p class="bloc-sub">Un écran, ce qu'il met en avant, où regarder</p>
+  <div class="pills"><span class="pill">socle</span><span class="pill">Performance Analysis</span><span class="pill">Scale Insights</span></div>
+</div>
+<aside class="notes">Captures de la maquette · repères orange = où regarder · le fil d'Ariane en haut à droite = où c'est dans Setup</aside>
+
+</section>
+<section id="v-activation">
+<div class="crumb">📍 Setup › Scale › <b>Scale Center</b></div>
+<p class="kicker">La visite · activation</p>
+<h2>Activer : un interrupteur, un accord</h2>
+<p class="what">Ce qu'il met en avant : <b>30 secondes de clics… et 2 heures d'attente</b></p>
+<div class="tour">
+  <div class="shots">
+    <div class="shot" data-cap="act" style="--mh:330px"><img src="img/act.png"><span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-label="3" data-fragment-index="3"></span></div>
+    <div class="shot fragment pop" data-fragment-index="2" data-cap="act-agree" style="--mh:330px"><img src="img/act-agree.png"><span class="mk" data-mk="2" data-label="2"></span></div>
+  </div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>« Enable Scale Center »</span></li>
+    <li class="fragment" data-fragment-index="2"><b>2</b><span>Accord : infrastructure séparée</span></li>
+    <li class="fragment key" data-fragment-index="3"><b>3</b><span>« Performance metrics take about <b>2 hours</b> to appear »</span></li>
+  </ol>
+</div>
+<aside class="notes">Souvent déjà actif (EE/PE par défaut) · chute : entracte 🍿 (popup)</aside>
+<span class="fragment rd-trigger" data-popup-show="pop-entracte"></span>
+<span class="fragment rd-trigger" data-popup-expand="pop-entracte"></span>
+<span class="fragment rd-trigger" data-popup-close="pop-entracte"></span>
+</section>
+<section id="v-alerts">
+<div class="crumb">📍 Scale Center › <b>Alerts</b></div>
+<p class="kicker">La visite · le socle</p>
+<h2>Alerts</h2>
+<p class="what">Ce qu'il met en avant : <b>être prévenu par e-mail avant les utilisateurs</b></p>
+<div class="tour">
+  <div class="shots">
+    <div class="shot" data-cap="alerts-set" style="--mh:330px"><img src="img/alerts-set.png"><span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-fragment-index="2"></span></div>
+    <div class="shot fragment pop" data-fragment-index="3" data-cap="alerts-hist" style="--mh:300px"><img src="img/alerts-hist.png"><span class="mk" data-mk="2" data-label="3"></span></div>
+  </div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>3 alertes : Async Apex, DB CPU, Row Lock</span></li>
+    <li class="fragment" data-fragment-index="2"><b>2</b><span>Le destinataire (une liste d'astreinte)</span></li>
+    <li class="fragment key" data-fragment-index="3"><b>3</b><span>Alerts History : actives et levées</span></li>
+  </ol>
+</div>
+<aside class="notes">Seuils fixés par Salesforce · mettre une adresse d'équipe · l'alerte active reviendra dans l'enquête 2</aside>
+
+</section>
+<section id="v-overview">
+<div class="crumb">📍 Scale Center › <b>Org Overview</b> › Overview</div>
+<p class="kicker">La visite · le socle</p>
+<h2>Org Overview</h2>
+<p class="what">Ce qu'il met en avant : <b>la semaine passée, résumée en 30 secondes</b></p>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="ov-peak" style="--mh:400px"><img src="img/ov-peak.png">
+    <span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-fragment-index="2"></span><span class="mk fragment" data-mk="3" data-fragment-index="3"></span><span class="mk fragment" data-mk="4" data-fragment-index="4"></span></div></div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>L'heure de pic et le débit max</span></li>
+    <li class="fragment" data-fragment-index="2"><b>2</b><span>L'anomalie, chiffrée vs la moyenne</span></li>
+    <li class="fragment" data-fragment-index="3"><b>3</b><span>La courbe de la semaine, pic marqué</span></li>
+    <li class="fragment key" data-fragment-index="4"><b>4</b><span>« Analyze Org Health » : on demande le diagnostic</span></li>
+  </ol>
+</div>
+<div id="zo1" class="rd-hidden zoom"><div class="zoom-head">🔍 ① <b>Request Volume Takeaways</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="ov-z1"><img src="img/ov-z1.png"></div>
+  <ol class="legend"><li class="key"><b>1</b><span>L'heure la plus chargée de la semaine (mardi 3 nov., 14 h–15 h) et le débit max : 24 requêtes par seconde</span></li></ol></div></div>
+<div id="zo2" class="rd-hidden zoom"><div class="zoom-head">🔍 ② <b>Errors</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="ov-z2"><img src="img/ov-z2.png"></div>
+  <ol class="legend"><li class="key"><b>2</b><span>93 erreurs Concurrent Apex le mercredi 4 nov., 10 h 20–11 h 20 : 3 900 % au-dessus de la moyenne. On y reviendra dans l'enquête 1</span></li></ol></div></div>
+<div id="zo3" class="rd-hidden zoom"><div class="zoom-head">🔍 ③ <b>Trend of Requests Generated by the Application</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="ov-z3"><img src="img/ov-z3.png"></div>
+  <ol class="legend"><li class="key"><b>3</b><span>Les requêtes heure par heure sur 7 jours : 5 jours ouvrés, un week-end calme, et le trait rouge sur l'heure de pic</span></li></ol></div></div>
+<span class="fragment rd-trigger" data-fragment-index="1" data-show="zo1"></span>
+<span class="fragment rd-trigger" data-fragment-index="2" data-add-class="zo1:gone" data-show="zo2"></span>
+<span class="fragment rd-trigger" data-fragment-index="3" data-add-class="zo2:gone" data-show="zo3"></span>
+<span class="fragment rd-trigger" data-fragment-index="4" data-add-class="zo3:gone"></span>
+<aside class="notes">Page d'accueil · onglets Overview / Apex / SOQL / Errors · le diagnostic n'est pas là d'office : il faut cliquer · un zoom par zone (1 à 3), le 4 se montre sur la capture</aside>
+<span class="fragment rd-trigger" data-popup-show="pop-1mn"></span>
+<span class="fragment rd-trigger" data-popup-close="pop-1mn"></span>
+</section>
+<section id="v-overview-top3">
+<div class="crumb">📍 Org Overview › <b>Analyze Org Health</b></div>
+<p class="kicker">La visite · le socle</p>
+<h2><span class="fix-wrap"><span id="t-1mn" class="strikeable">Une minute</span><span id="t-2s" class="rd-hidden fix-note"></span></span> plus tard : le podium</h2>
+<span class="fragment rd-trigger" data-fragment-index="1" data-strike="t-1mn" data-show="t-2s"></span>
+<p class="what">Ce qu'il met en avant : <b>3 coupables nommés, et la nature du fix</b></p>
+<div class="tour">
+  <div class="shots">
+    <div class="shot" data-cap="ov-wait" style="--mh:300px"><img src="img/ov-wait.png"><span class="mk fragment" data-mk="2" data-label="1" data-fragment-index="2"></span></div>
+    <div class="shot fragment pop" data-fragment-index="3" data-cap="ov-top3" style="--mh:380px"><img src="img/ov-top3.png"><span class="mk" data-mk="2" data-label="2"></span><span class="mk" data-mk="3" data-label="3"></span></div>
+  </div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="2"><b>1</b><span>≈ 1 minute d'analyse</span></li>
+    <li class="fragment key" data-fragment-index="3"><b>2</b><span>Top 3 : Apex lent · SOQL coûteuse · erreurs Apex, avec les coupables</span></li>
+    <li class="fragment" data-fragment-index="4"><b>3</b><span>« View Details » : le détail de chaque carte</span></li>
+  </ol>
+</div>
+
+<div id="z-apex" class="rd-hidden zoom"><div class="zoom-head">🔍 View Details › <b>Apex</b> — les classes lentes de l'heure de pic, par entry point · lien « Create an Apex Investigation »</div>
+  <div class="zoom-body"><div class="shot" data-cap="ov-apex"><img src="img/ov-apex.png"><span class="mk" data-mk="1"></span><span class="mk" data-mk="3" data-label="2"></span><span class="mk" data-mk="2" data-label="3"></span></div><ol class="legend"><li class=""><b>1</b><span>Critical / Major / Minor</span></li><li class="key"><b>2</b><span>Par entry point : exécutions, temps moyen, &gt; 5 s, CPU, DB</span></li><li class=""><b>3</b><span>« Create an Apex Investigation » → Performance Analysis</span></li></ol></div></div>
+<div id="z-soql" class="rd-hidden zoom"><div class="zoom-head">🔍 View Details › <b>SOQL</b> — le Top 5 des requêtes, jusqu'au <b>numéro de ligne</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="ov-soql"><img src="img/ov-soql.png"><span class="mk" data-mk="1"></span><span class="mk" data-mk="2"></span></div><ol class="legend"><li class=""><b>1</b><span>La requête la plus coûteuse : % du temps SOQL, % au-delà de 5 s</span></li><li class="key"><b>2</b><span>Le numéro de ligne : on ouvre la classe, on y va</span></li></ol></div></div>
+<div id="z-err" class="rd-hidden zoom"><div class="zoom-head">🔍 View Details › <b>Errors</b> — le Top 5 des erreurs Apex : où, combien, quel message</div>
+  <div class="zoom-body"><div class="shot" data-cap="ov-err"><img src="img/ov-err.png"><span class="mk" data-mk="1"></span></div><ol class="legend"><li class="key"><b>1</b><span>L'erreur la plus fréquente : où, combien, quel message</span></li></ol></div></div>
+<span class="fragment rd-trigger" data-fragment-index="5" data-show="z-apex"></span>
+<span class="fragment rd-trigger" data-fragment-index="6" data-add-class="z-apex:gone" data-show="z-soql"></span>
+<span class="fragment rd-trigger" data-fragment-index="7" data-add-class="z-soql:gone" data-show="z-err"></span>
+<span class="fragment rd-trigger" data-fragment-index="8" data-add-class="z-err:gone"></span>
+<aside class="notes">Clic 1 : « 2 secondes » (gag) · 2-4 : analyse, podium, View Details · 5-7 : les 3 détails en surimpression (Apex, SOQL, Errors) · 8 : retour au podium</aside>
+
+</section>
+<section id="v-orgperf">
+<div class="crumb">📍 Scale Center › <b>Org Performance</b></div>
+<p class="kicker">La visite · le socle</p>
+<h2>Org Performance</h2>
+<p class="what">Ce qu'il met en avant : <b>24 h de métriques, un point toutes les 10 minutes</b></p>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="orgperf" style="--mh:480px"><img src="img/orgperf.png">
+    <span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-fragment-index="2"></span><span class="mk fragment" data-mk="3" data-fragment-index="3"></span><span class="mk fragment" data-mk="4" data-fragment-index="4"></span></div></div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>Fenêtre 4 h / 12 h / 24 h, et « Compare » deux périodes</span></li>
+    <li class="fragment" data-fragment-index="2"><b>2</b><span>6 compteurs : logins, Concurrent Apex, Row Lock, callouts</span></li>
+    <li class="fragment" data-fragment-index="3"><b>3</b><span>7 graphiques : erreurs, temps, volume, CPU, logins, callouts</span></li>
+    <li class="fragment key" data-fragment-index="4"><b>4</b><span>« Click and drag on any chart… »</span></li>
+  </ol>
+</div>
+<div id="zp1" class="rd-hidden zoom"><div class="zoom-head">🔍 ① <b>Time Range · Compare</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="op-z1"><img src="img/op-z1.png"></div>
+  <ol class="legend"><li class="key"><b>1</b><span>La fenêtre observée (4 h, 12 h ou 24 h) ; « Compare » superpose une deuxième période, par exemple la même journée la semaine d'avant</span></li></ol></div></div>
+<div id="zp2" class="rd-hidden zoom"><div class="zoom-head">🔍 ② <b>Les 6 compteurs</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="op-z2"><img src="img/op-z2.png"></div>
+  <ol class="legend"><li class="key"><b>2</b><span>Logins réussis et échoués, erreurs Concurrent Apex, Concurrent UI, Row Lock et callouts : en rouge, ce qui mérite un coup d'œil</span></li></ol></div></div>
+<div id="zp3" class="rd-hidden zoom"><div class="zoom-head">🔍 ③ <b>Total Execution Errors (errors/10 mins)</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="op-z3"><img src="img/op-z3.png"></div>
+  <ol class="legend"><li class="key"><b>3</b><span>Le premier des 7 graphiques : les erreurs par type, un point toutes les 10 minutes. Ici, un pic de Row Lock Timeout vers 10 h</span></li></ol></div></div>
+<span class="fragment rd-trigger" data-fragment-index="1" data-show="zp1"></span>
+<span class="fragment rd-trigger" data-fragment-index="2" data-add-class="zp1:gone" data-show="zp2"></span>
+<span class="fragment rd-trigger" data-fragment-index="3" data-add-class="zp2:gone" data-show="zp3"></span>
+<span class="fragment rd-trigger" data-fragment-index="4" data-add-class="zp3:gone"></span>
+<aside class="notes">Plus de 12 h = quelques minutes de chargement · le 4 est la clé : on sélectionne un pic (slide suivante) · un zoom par zone 1 à 3</aside>
+
+</section>
+<section id="v-geste">
+<div class="crumb">📍 Org Performance → <b>Performance Analysis</b></div>
+<p class="kicker">La visite · le pont</p>
+<h2>Le geste : sélectionner un pic</h2>
+<p class="what">Ce qu'il met en avant : <b>de la courbe à l'analyse, sans quitter l'écran</b></p>
+<div class="tour wide">
+  <div class="shots"><div class="shot" data-cap="orgperf-sel" style="--mh:470px"><img src="img/orgperf-sel.png"><img class="over fragment" data-fragment-index="2" src="img/orgperf-menu.png">
+    <span id="mk-band" class="mk mk-out mk-left fragment" data-mk="1" data-fragment-index="1"></span><span class="mk mk-out mk-tr mk-menu fragment" data-mk="2" data-cap="orgperf-menu" data-fragment-index="2"></span></div></div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>Cliquer-glisser : la bande bleue (sur tous les graphiques), puis la petite flèche ▾</span></li>
+    <li class="fragment key" data-fragment-index="2"><b>2</b><span>« Start Analysis » : Consolidated (30 min max) ou une analyse ciblée</span></li>
+  </ol>
+</div>
+<span class="fragment rd-trigger" data-fragment-index="2" data-add-class="mk-band:gone"></span>
+<aside class="notes">Pas de suspect → Consolidated · un suspect → Row Lock, Flow, Apex… · on nomme le rapport, il tourne en asynchrone</aside>
+
+</section>
+<section id="v-analyses">
+<div class="crumb">📍 Scale Center › <b>Performance Analysis</b></div>
+<p class="kicker">La visite · Performance Analysis</p>
+<h2>Les rapports d'analyse</h2>
+<p class="what">Ce qu'il met en avant : <b>10 analyses spécialisées, un rapport consolidé</b></p>
+<div class="tour">
+  <div class="shots">
+    <div class="shot" data-cap="an-list" style="--mh:260px"><img src="img/an-list.png"><span class="mk fragment" data-mk="2" data-label="1" data-fragment-index="1"></span></div>
+    <div class="shot fragment pop" data-fragment-index="2" data-cap="an-new" style="--mh:330px"><img src="img/an-new.png"><span class="mk" data-mk="1" data-label="2"></span></div>
+  </div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>100 derniers rapports, expirent après 30 jours</span></li>
+    <li class="fragment key" data-fragment-index="2"><b>2</b><span>Apex · Concurrent Apex · Database · Flow · Governor · Integrations · List Views & Reports · Platform Events · Row Lock · Consolidated</span></li>
+  </ol>
+</div>
+<aside class="notes">Lancer depuis ici (date de fin + fenêtre) ou par le glisser · statut In Progress → Completed</aside>
+
+</section>
+<section id="v-cons-head">
+<div class="crumb">📍 Performance Analysis › <b>Consolidated Report</b></div>
+<p class="kicker">La visite · Consolidated Report</p>
+<h2>Un rapport, un onglet par analyse</h2>
+<p class="what">Ce qu'il met en avant : <b>30 minutes passées au microscope</b></p>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="cons-head" style="--mh:470px"><img src="img/cons-head.png">
+    <span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-fragment-index="2"></span><span class="mk fragment" data-mk="3" data-fragment-index="3"></span></div></div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>Qui, quand, quelle fenêtre</span></li>
+    <li class="fragment" data-fragment-index="2"><b>2</b><span>La fenêtre analysée, grisée dans les 24 h</span></li>
+    <li class="fragment key" data-fragment-index="3"><b>3</b><span>Les onglets : Concurrency, Apex, Database, Flow, Governor, Integrations… + Row Lock dans « More »</span></li>
+  </ol>
+</div>
+<aside class="notes">Les slides suivantes = les onglets les plus utiles</aside>
+
+</section>
+<section id="v-cons-conc">
+<div class="crumb">📍 Consolidated Report › <b>Apex Concurrency</b></div>
+<p class="kicker">La visite · onglet</p>
+<h2>Apex Concurrency</h2>
+<p class="what">Ce qu'il met en avant : <b>est-ce la plateforme… ou mon code ?</b></p>
+<div class="tour wide">
+  <div class="shots"><div class="shot" data-cap="cons-conc" style="--mh:420px"><img src="img/cons-conc.png">
+    <span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-fragment-index="2"></span><span class="mk fragment" data-mk="3" data-fragment-index="3"></span></div></div>
+  <ol class="legend">
+    <li class="fragment key" data-fragment-index="1"><b>1</b><span>Throttle ? Déploiement ? Redémarrage ? Puis les erreurs concurrentes</span></li>
+    <li class="fragment" data-fragment-index="2"><b>2</b><span>Recommandations générées</span></li>
+    <li class="fragment" data-fragment-index="3"><b>3</b><span>Où passe le temps des transactions &gt; 5 s</span></li>
+  </ol>
+</div>
+<aside class="notes">Trois NO = ce n'est pas Salesforce, c'est nous · 92 % de temps base de données = SOQL/DML</aside>
+
+</section>
+<section id="v-cons-apex">
+<div class="crumb">📍 Consolidated Report › <b>Apex Summary</b></div>
+<p class="kicker">La visite · onglet</p>
+<h2>Apex Summary</h2>
+<p class="what">Ce qu'il met en avant : <b>les classes lentes, classées par gravité</b></p>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="cons-slow" style="--mh:470px"><img src="img/cons-slow.png">
+    <span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-fragment-index="2"></span><span class="mk fragment" data-mk="3" data-fragment-index="3"></span></div></div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>Où passe le temps Apex : DB, verrous, callouts…</span></li>
+    <li class="fragment" data-fragment-index="2"><b>2</b><span>Critical / Major / Minor</span></li>
+    <li class="fragment key" data-fragment-index="3"><b>3</b><span>Par entry point ; la métrique dominante en rouge</span></li>
+  </ol>
+</div>
+<aside class="notes">Puis Apex Errors (message + volume) · puis Factors Contributing to Database Time → slide suivante</aside>
+
+</section>
+<section id="v-cons-soql">
+<div class="crumb">📍 Apex Summary › <b>Top 5 Expensive SOQLs</b></div>
+<p class="kicker">La visite · onglet</p>
+<h2>Jusqu'à la ligne de code</h2>
+<p class="what">Ce qu'il met en avant : <b>classe, méthode, numéro de ligne</b></p>
+<div class="shots"><div class="shot" data-cap="cons-soql" style="--mh:330px"><img src="img/cons-soql.png">
+  <span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-fragment-index="2"></span></div></div>
+<ol class="legend" style="margin-top:.6em">
+  <li class="fragment" data-fragment-index="1"><b>1</b><span>La requête la plus coûteuse : % du temps SOQL, % au-delà de 5 s</span></li>
+  <li class="fragment key" data-fragment-index="2"><b>2</b><span>Le numéro de ligne : on ouvre la classe, on y va</span></li>
+</ol>
+<aside class="notes">Moment fort pour des devs · on le retrouvera dans l'enquête 2</aside>
+
+</section>
+<section id="v-cons-db">
+<div class="crumb">📍 Consolidated Report › <b>Database Performance</b></div>
+<p class="kicker">La visite · onglet</p>
+<h2>Database Performance</h2>
+<p class="what">Ce qu'il met en avant : <b>qui consomme le CPU de la base</b></p>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="cons-db" style="--mh:470px"><img src="img/cons-db.png">
+    <span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-fragment-index="2"></span><span class="mk fragment" data-mk="3" data-fragment-index="3"></span></div></div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>Top SOQL par temps d'exécution (cliquables)</span></li>
+    <li class="fragment key" data-fragment-index="2"><b>2</b><span>Le détail : CPU, fréquence, entry point, requête</span></li>
+    <li class="fragment" data-fragment-index="3"><b>3</b><span>Top entry points et utilisateurs ; plus bas : les DML</span></li>
+  </ol>
+</div>
+<aside class="notes">Batch vs UI · un utilisateur technique en tête = une intégration ou un batch</aside>
+
+</section>
+<section id="v-cons-row">
+<div class="crumb">📍 Consolidated Report › More › <b>Row Lock</b></div>
+<p class="kicker">La visite · onglet</p>
+<h2>Row Lock</h2>
+<p class="what">Ce qu'il met en avant : <b>quel enregistrement, verrouillé par qui</b></p>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="cons-row" style="--mh:470px"><img src="img/cons-row.png">
+    <span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-fragment-index="2"></span><span class="mk fragment" data-mk="3" data-fragment-index="3"></span></div></div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>Verrous par objet</span></li>
+    <li class="fragment" data-fragment-index="2"><b>2</b><span>Les enregistrements les plus verrouillés</span></li>
+    <li class="fragment key" data-fragment-index="3"><b>3</b><span>Par entry point : qui bloque, qui attend</span></li>
+  </ol>
+</div>
+<aside class="notes">Plus bas : chronologie par utilisateur, transactions les plus longues · cas d'école dans l'enquête 2</aside>
+
+</section>
+<section id="v-cons-autres">
+<div class="crumb">📍 Consolidated Report › <b>Governor · Integrations · Flow</b></div>
+<p class="kicker">La visite · onglets</p>
+<h2>Et aussi…</h2>
+<p class="what">Ce qu'ils mettent en avant : <b>limites touchées, appels externes, flows</b></p>
+<div class="tour">
+  <div class="shots" style="gap:.25em">
+    <div class="shot" data-cap="cons-gov" style="--mh:150px"><img src="img/cons-gov.png"><span class="mk" data-mk="2" data-label="1"></span></div>
+    <div class="shot" data-cap="cons-int" style="--mh:140px"><img src="img/cons-int.png"><span class="mk" data-mk="2" data-label="2"></span></div>
+    <div class="shot" data-cap="cons-flow" style="--mh:95px"><img src="img/cons-flow.png"><span class="mk" data-mk="1" data-label="3"></span></div>
+  </div>
+  <ol class="legend">
+    <li><b>1</b><span>Governor Limits</span></li>
+    <li><b>2</b><span>Integrations Performance</span></li>
+    <li class="key"><b>3</b><span>Flow Performance</span></li>
+  </ol>
+</div>
+
+<div id="z-gov" class="rd-hidden zoom"><div class="zoom-head">🔍 Onglet <b>Governor Limits</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="cons-gov"><img src="img/cons-gov.png"><span class="mk" data-mk="1"></span><span class="mk" data-mk="2"></span></div>
+  <ol class="legend"><li><b>1</b><span>La limite touchée, à la minute près, sur la fenêtre de 30 min</span></li><li class="key"><b>2</b><span>Où : l'entry point, le type de limite (« Too many SOQL queries: 101 »), combien de fois</span></li></ol></div></div>
+<div id="z-int" class="rd-hidden zoom"><div class="zoom-head">🔍 Onglet <b>Integrations Performance</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="cons-int"><img src="img/cons-int.png"><span class="mk" data-mk="1"></span><span class="mk" data-mk="2"></span></div>
+  <ol class="legend"><li><b>1</b><span>API Summary : les APIs entrantes, volume, &gt; 5 s, temps CPU / DB / callout</span></li><li class="key"><b>2</b><span>Callouts Summary : statut <b>-1</b> = timeout (≈ 10 s), 100 % au-delà de 5 s</span></li></ol></div></div>
+<div id="z-flow" class="rd-hidden zoom"><div class="zoom-head">🔍 Onglet <b>Flow Performance</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="cons-flow"><img src="img/cons-flow.png"><span class="mk" data-mk="1"></span></div>
+  <ol class="legend"><li class="key"><b>1</b><span>Type, nombre, temps moyen / max / total… mais les flows ne sont identifiés que par des <b>IDs bruts</b> (Version ID, Definition ID)</span></li></ol></div></div>
+<span class="fragment rd-trigger" data-fragment-index="1" data-show="z-gov"></span>
+<span class="fragment rd-trigger" data-fragment-index="2" data-add-class="z-gov:gone" data-show="z-int"></span>
+<span class="fragment rd-trigger" data-fragment-index="3" data-add-class="z-int:gone" data-show="z-flow"></span>
+<span class="fragment rd-trigger" data-fragment-index="4" data-add-class="z-flow:gone"></span>
+<aside class="notes">Clics 1-3 : chaque onglet en grand · clic 4 : retour · Flow = point faible : retrouver le flow à partir du Definition ID</aside>
+
+</section>
+<section id="v-ag-code">
+<div class="crumb">📍 Scale Insights › <b>ApexGuru Insights</b></div>
+<p class="kicker">La visite · Scale Insights</p>
+<h2>ApexGuru : les recommandations de code</h2>
+<p class="what">Ce qu'il met en avant : <b>le code actuel et le correctif, côte à côte</b></p>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="ag-code" style="--mh:480px"><img src="img/ag-code.png">
+    <span class="mk fragment" data-mk="2" data-label="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="3" data-label="2" data-fragment-index="2"></span><span class="mk fragment" data-mk="5" data-label="3" data-fragment-index="3"></span><span class="mk fragment" data-mk="1" data-label="4" data-fragment-index="4"></span></div></div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>6 onglets : code, SOQL/DML, méthodes coûteuses, mortes, tests, doublons</span></li>
+    <li class="fragment" data-fragment-index="2"><b>2</b><span>Critical / Major / Minor</span></li>
+    <li class="fragment key" data-fragment-index="3"><b>3</b><span>Current Code ↔ Recommended Code (avec les lignes)</span></li>
+    <li class="fragment" data-fragment-index="4"><b>4</b><span>Les mêmes règles dans l'IDE, la CLI, la CI/CD (Code Analyzer)</span></li>
+  </ol>
+</div>
+<aside class="notes">Rapport figé : Generate Insight Report · « ne garantit pas l'exactitude » : on relit · Code Analyzer = shift-left</aside>
+<span class="fragment rd-trigger" data-popup-show="pop-apexguru-lettre"></span>
+<span class="fragment rd-trigger" data-popup-expand="pop-apexguru-lettre"></span>
+<span class="fragment rd-trigger" data-popup-close="pop-apexguru-lettre"></span>
+</section>
+<section id="v-ag-tests">
+<div class="crumb">📍 ApexGuru Insights › <b>Test Cases</b></div>
+<p class="kicker">La visite · onglet</p>
+<h2>ApexGuru écrit vos tests</h2>
+<p class="what">Ce qu'il met en avant : <b>les chemins non couverts… et le test qui les couvre</b></p>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="ag-tests" style="--mh:480px"><img src="img/ag-tests.png">
+    <span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-fragment-index="2"></span></div></div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>« Untested Code Path » + une méthode de test nommée</span></li>
+    <li class="fragment key" data-fragment-index="2"><b>2</b><span>Le test complet : données, startTest/stopTest, assertions</span></li>
+  </ol>
+</div>
+<aside class="notes">Aussi : testMethod déprécié → @IsTest · à relire avant de commiter</aside>
+
+</section>
+<section id="v-ag-dups">
+<div class="crumb">📍 ApexGuru Insights › <b>Code Duplicates</b></div>
+<p class="kicker">La visite · onglet</p>
+<h2>Le copier-coller, chiffré</h2>
+<p class="what">Ce qu'il met en avant : <b>la dette de duplication et comment la résorber</b></p>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="ag-dups" style="--mh:470px"><img src="img/ag-dups.png">
+    <span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-fragment-index="2"></span><span class="mk fragment" data-mk="3" data-fragment-index="3"></span></div></div>
+  <ol class="legend">
+    <li class="fragment key" data-fragment-index="1"><b>1</b><span>312 K caractères dupliqués</span></li>
+    <li class="fragment" data-fragment-index="2"><b>2</b><span>Portée, effort, exact ou « near duplicate »</span></li>
+    <li class="fragment" data-fragment-index="3"><b>3</b><span>Le schéma de résolution : Extract Shared Base Class…</span></li>
+  </ol>
+</div>
+<aside class="notes">Aussi : Unused Methods (code mort), Expensive Methods</aside>
+
+</section>
+<section id="v-ag-mort">
+<div class="crumb">📍 ApexGuru Insights › <b>Unused Methods</b></div>
+<p class="kicker">La visite · onglets</p>
+<h2>Le code mort</h2>
+<p class="what">Ce qu'il met en avant : <b>ce qu'on pourrait supprimer</b></p>
+<div class="tour">
+  <div class="shots">
+    <div class="shot" data-cap="ag-unused" style="--mh:440px"><img src="img/ag-unused.png"><span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-fragment-index="2"></span></div>
+  </div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>Unused Methods : par classe, ligne et taille en caractères</span></li>
+    <li class="fragment key" data-fragment-index="2"><b>2</b><span>Des migrations jamais supprimées : du code mort… mais à tester et à maintenir</span></li>
+  </ol>
+</div>
+<div id="n-unused" class="rd-hidden note-pop">⚠️ <strong>Une indication, pas une vérité :</strong> l'outil ne dit pas comment il décide qu'une méthode est « inutilisée ».<br><br>Les méthodes <b>polymorphes</b> (surchargées, appelées via une interface) et celles appelées depuis une page <b>Visualforce</b> sont souvent mal interprétées. On vérifie avant de supprimer !</div>
+<span class="fragment rd-trigger" data-fragment-index="3" data-show="n-unused"></span>
+<aside class="notes">104 méthodes mortes chez WDF · on finit sur la bulle : une indication, pas une vérité · (Expensive Methods existe aussi : liste brute, non montrée)</aside>
+
+</section>
+<section id="v-db">
+<div class="crumb">📍 Scale Insights › <b>Database Insights</b></div>
+<p class="kicker">La visite · Scale Insights</p>
+<h2>Database Insights</h2>
+<p class="what">Ce qu'il met en avant : <b>les SOQL qui coûtent, et celles qui se dégradent</b></p>
+<div class="tour">
+  <div class="shots">
+    <div class="shot" data-cap="db-top" style="--mh:420px"><img src="img/db-top.png"><img class="over fragment" data-fragment-index="3" src="img/db-reg-wdf.png"><span id="mk-db1" class="mk fragment" data-mk="2" data-label="1" data-fragment-index="1"></span><span id="mk-db2" class="mk mk-in-r fragment" data-mk="3" data-label="2" data-fragment-index="2"></span><span class="mk fragment" data-cap="db-reg-wdf" data-mk="2" data-label="3" data-fragment-index="3"></span></div>
+    <span class="fragment rd-trigger" data-fragment-index="3" data-add-class="mk-db1:gone mk-db2:gone"></span>
+  </div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>Top 15 sur la semaine : temps, volume, objet, entry point</span></li>
+    <li class="fragment" data-fragment-index="2"><b>2</b><span>« Regressed » : elle était plus rapide avant</span></li>
+    <li class="fragment key" data-fragment-index="3"><b>3</b><span>Regressed SOQLs : % de régression + recommandation</span></li>
+  </ol>
+</div>
+<aside class="notes">Rapport hebdo, quotas 1/jour 3/semaine · View = la requête complète</aside>
+
+</section>
+<section id="v-db-qpa">
+<div class="crumb">📍 Database Insights › <b>Query Plan Analyzer</b></div>
+<p class="kicker">La visite · onglet</p>
+<h2>L'outil de 2026 contre l'ancêtre de 2013</h2>
+<p class="what">Même requête, deux réponses</p>
+<div class="tour" style="grid-template-columns:1fr 1fr">
+  <div id="th1" class="shots rd-hidden"><div class="shot" data-cap="db-qpa" style="--mh:300px"><img src="img/db-qpa.png"></div><p class="what" style="margin-top:.3em">🤖 Scale Center · Query Plan Analyzer <small>(2026, avec de l'IA)</small></p></div>
+  <div id="th2" class="shots rd-hidden"><div class="shot" data-cap="db-devc" style="--mh:300px"><img src="img/db-devc.png"></div><p class="what" style="margin-top:.3em">👴 Developer Console · Query Plan <small>(2013)</small></p></div>
+</div>
+
+<div id="z-qpa" class="rd-hidden zoom"><div class="zoom-head">🔍 🤖 <b>Scale Center</b> · Query Plan Analyzer</div>
+  <div class="zoom-body"><div class="shot" data-cap="db-qpa"><img src="img/db-qpa.png"><span class="mk" data-mk="1"></span><span class="mk" data-mk="2"></span></div>
+  <ol class="legend"><li><b>1</b><span>La requête (elle n'est pas exécutée en prod)</span></li><li class="key"><b>2</b><span>La réponse : « Use selective queries that follow best practices »… et c'est tout.</span></li></ol></div></div>
+<div id="z-devc" class="rd-hidden zoom"><div class="zoom-head">🔍 👴 <b>Developer Console</b> · Query Plan</div>
+  <div class="zoom-body"><div class="shot" data-cap="db-devc"><img src="img/db-devc.png"><span class="mk" data-mk="1"></span><span class="mk" data-mk="2"></span></div>
+  <ol class="legend"><li><b>1</b><span>Le plan : <b>TableScan</b> sur 2,1 M lignes, coût 1,81</span></li><li class="key"><b>2</b><span>Le coupable, nommé : <code>Statut__c</code> non indexé</span></li></ol></div></div>
+
+<div id="ring0" class="ring ring-intro">
+  <div class="corner red"><div class="boxer">🤖</div><b>L'IA</b><small>Scale Center · 2026</small></div>
+  <div class="vs">🥊</div>
+  <div class="corner blue"><div class="boxer">👴</div><b>Le senior</b><small>Developer Console · 2013</small></div>
+</div>
+<div id="ring" class="rd-hidden ring">
+  <div class="corner red"><div class="boxer">🤖</div><b>L'IA</b><small>Scale Center · 2026</small><div class="punch">« Use selective queries »</div></div>
+  <div class="vs">🥊</div>
+  <div class="corner blue"><div class="boxer">👴</div><b>Le senior</b><small>Developer Console · 2013</small><div class="punch">TableScan · coût 1,81 · <code>Statut__c</code> non indexé</div></div>
+  <div id="ko" class="rd-hidden ko">K.O.</div>
+  <div id="ko-sub" class="rd-hidden ko-sub">Victoire du senior au 1er round. L'IA demande la revanche… en 2027.</div>
+</div>
+
+<span class="fragment rd-trigger" data-fragment-index="1" data-add-class="ring0:gone" data-show="z-qpa th1"></span>
+<span class="fragment rd-trigger" data-fragment-index="2" data-add-class="z-qpa:gone" data-show="z-devc th2"></span>
+<span class="fragment rd-trigger" data-fragment-index="3" data-add-class="z-devc:gone" data-show="ring"></span>
+<span class="fragment rd-trigger" data-fragment-index="4" data-show="ko ko-sub"></span>
+<div id="n-papy" class="rd-hidden note-pop papy">🧓 <strong>Vous ne comprenez pas ce que dit papy ?</strong><br>« <b>TableScan</b> · coût <b>1,81</b> · <code>Statut__c</code> <b>non indexé</b> »<br><br>Demandez à un LLM de vous le traduire : <b>ça, il sait le faire</b> 😉</div>
+<span class="fragment rd-trigger" data-fragment-index="5" data-show="n-papy"></span>
+<span class="fragment rd-trigger" data-fragment-index="6" data-add-class="ring:gone n-papy:gone"></span>
+<p class="v-caption fragment" data-fragment-index="6">Sérieusement : Scale Center trouve le suspect sur la vraie charge ; la Dev Console l'interroge.</p>
+<aside class="notes">Arrivée : les boxeurs · 1 : la réponse de l'IA (« Merci Captain Obvious ») · 2 : le plan de la Dev Console · 3 : le ring avec les coups · 4 : K.O. · 5 : popup « papy » · 6 : message sérieux. Si on vous demande la traduction : TableScan = Salesforce lit toute la table (2,1 M lignes) au lieu d'utiliser un index ; coût &gt; 1 = plus cher qu'un parcours complet, donc pas sélectif ; Statut__c n'a pas d'index, son filtre n'aide pas → filtre date ou index custom.</aside>
+
+</section>
+<section id="v-dep">
+<div class="crumb">📍 Scale Insights › <b>Deployment Insights</b></div>
+<p class="kicker">La visite · Scale Insights</p>
+<h2>Deployment Insights</h2>
+<p class="what">Ce qu'il met en avant : <b>le diff de prod d'un déploiement</b></p>
+<div class="tour">
+  <div class="shots">
+    <div class="shot" data-cap="dep-gen" style="--mh:330px"><img src="img/dep-gen.png"><span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-fragment-index="2"></span></div>
+    <div class="shot fragment pop" data-fragment-index="3" data-cap="dep-key" style="--mh:400px"><img src="img/dep-key.png"><span class="mk" data-mk="1" data-label="3"></span><span class="mk fragment" data-mk="3" data-label="4" data-fragment-index="4"></span></div>
+  </div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>Les déploiements des 25 derniers jours : on choisit celui à analyser</span></li>
+    <li class="fragment" data-fragment-index="2"><b>2</b><span>24 h d'attente · 1 rapport/jour · 3/semaine</span></li>
+    <li class="fragment key" data-fragment-index="3"><b>3</b><span>Key Insights : le verdict en 3 phrases</span></li>
+    <li class="fragment" data-fragment-index="4"><b>4</b><span>Le volume, déploiements en lignes verticales</span></li>
+  </ol>
+</div>
+<aside class="notes">Attention au libellé « Infrastructure performance decreased » : lire le détail</aside>
+
+</section>
+<section id="v-dep-ba">
+<div class="crumb">📍 Deployment Insights › <b>Avant / après</b></div>
+<p class="kicker">La visite · Scale Insights</p>
+<h2>Avant / après, en un coup d'œil</h2>
+<p class="what">Ce qu'il met en avant : <b>gris = avant · vert = mieux · rouge = pire</b></p>
+<div class="shots"><div class="shot" data-cap="dep-ba" style="--mh:400px"><img src="img/dep-ba.png">
+  <span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-fragment-index="2"></span></div></div>
+<ol class="legend" style="margin-top:.5em;display:flex;gap:2em">
+  <li class="fragment" data-fragment-index="1"><b>1</b><span>Les erreurs par type</span></li>
+  <li class="fragment key" data-fragment-index="2"><b>2</b><span>Les temps : SOAP, UI, REST, App CPU, DB CPU</span></li>
+</ol>
+<aside class="notes">La lecture se fait en 3 secondes : vert / rouge</aside>
+
+</section>
+<section id="v-dep-onglets">
+<div class="crumb">📍 Deployment Insights › <b>Errors · User Experience · API · Infrastructure</b></div>
+<p class="kicker">La visite · Scale Insights</p>
+<h2>Du clic utilisateur au CPU</h2>
+<p class="what">Ce qu'il met en avant : <b>le détail par page, par API, par entry point</b></p>
+<div class="tour">
+  <div class="shots">
+    <div class="shot" data-cap="dep-ux" style="--mh:330px"><img src="img/dep-ux.png"><span class="mk fragment" data-mk="1" data-fragment-index="1"></span></div>
+    <div class="shot fragment pop" data-fragment-index="4" data-cap="dep-infra" style="--mh:300px"><img src="img/dep-infra.png"><span class="mk" data-mk="2" data-label="2"></span><span class="mk fragment" data-mk="3" data-label="3" data-fragment-index="5"></span></div>
+  </div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>User Experience : l'EPT de chaque page, avant → après</span></li>
+    <li class="fragment key" data-fragment-index="4"><b>2</b><span>Infrastructure : la régression, par entry point</span></li>
+    <li class="fragment" data-fragment-index="5"><b>3</b><span>… et les améliorations aussi</span></li>
+  </ol>
+</div>
+<div id="n-ept" class="rd-hidden note-pop ept">🤔 <strong>Tu ne sais pas ce qu'est l'EPT ?</strong> On pourrait demander au présentateur… mais pas sûr qu'il sache répondre. Déjà, je dois faire ses slides, et en plus je dois vous expliquer les termes !<div id="n-ept-more" class="rd-hidden"><br><b>EPT = Experienced Page Time</b> : le temps que <b>l'utilisateur</b> attend, mesuré dans son navigateur, entre le clic et une page Lightning complètement affichée et utilisable (tous les composants chargés, plus aucun appel serveur en cours).<br><br>C'est la mesure du ressenti, pas du serveur : elle sert à comparer les pages, repérer celles qui rament et vérifier qu'un déploiement ne les a pas ralenties.<br><br><b>P75</b> (75ᵉ percentile) : 3 affichages sur 4 sont plus rapides que cette valeur. Contrairement à la moyenne, elle n'est pas lissée par les pages rapides : elle montre ce que vivent les utilisateurs les plus mal lotis.</div></div>
+<span class="fragment rd-trigger" data-fragment-index="2" data-show="n-ept"></span>
+<span class="fragment rd-trigger" data-fragment-index="3" data-show="n-ept-more"></span>
+<span class="fragment rd-trigger" data-fragment-index="4" data-add-class="n-ept:gone"></span>
+<aside class="notes">Onglet Errors : How to Fix Row Lock (blocker / waiter, FOR UPDATE) · API : par méthode SOAP/REST</aside>
+
+</section>
+<section id="v-gov">
+<div class="crumb">📍 Scale Insights › <b>Governor Limit Insights</b></div>
+<p class="kicker">La visite · Scale Insights</p>
+<h2>Governor Limit Insights</h2>
+<p class="what">Ce qu'il met en avant : <b>les limites d'org, et qui les consomme</b></p>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="gov" style="--mh:470px"><img src="img/gov.png"><span class="mk fragment" data-mk="3" data-label="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="1" data-label="2" data-fragment-index="2"></span></div></div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>8 limites en % : API, Async Apex, Bulk, Concurrent…</span></li>
+    <li class="fragment" data-fragment-index="2"><b>2</b><span>Breached / Approaching / Safe</span></li>
+    <li class="fragment key" data-fragment-index="3"><b>3</b><span>Puis un panneau par limite : qui consomme, et quelle investigation lancer</span></li>
+  </ol>
+</div>
+
+<div id="z-gov-api" class="rd-hidden zoom"><div class="zoom-head">🔍 Panneau <b>API Request Limit</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="gov-api"><img src="img/gov-api.png"><span class="mk" data-mk="1"></span><span class="mk" data-mk="3" data-label="2"></span><span class="mk" data-mk="4" data-label="3"></span><span class="mk" data-mk="2" data-label="4"></span></div>
+  <ol class="legend"><li><b>1</b><span>Takeaways : le type d'API, l'URL source et l'appelant qui consomment le plus</span></li><li><b>2</b><span>7 jours : la limite en rouge, le jour de pic en gris</span></li><li><b>3</b><span>Les tableaux du jour de pic : par type, par URL source, par appelant</span></li><li class="key"><b>4</b><span>How to Fix → un <b>Consolidated Report</b></span></li></ol></div></div>
+<div id="z-gov-async" class="rd-hidden zoom"><div class="zoom-head">🔍 Panneau <b>Async Apex Execution Limit</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="gov-async"><img src="img/gov-async.png"><span class="mk" data-mk="4" data-label="1"></span><span class="mk" data-mk="5" data-label="2"></span><span class="mk" data-mk="2" data-label="3"></span></div>
+  <ol class="legend"><li><b>1</b><span>Future, Queueable, Batch : chaque entry point asynchrone, avec ses invocations et son CPU</span></li><li><b>2</b><span>La répartition par type d'asynchrone</span></li><li class="key"><b>3</b><span>How to Fix → une investigation <b>Apex Summary</b></span></li></ol></div></div>
+<div id="z-gov-conc" class="rd-hidden zoom"><div class="zoom-head">🔍 Panneau <b>Concurrent Apex</b> (EnGénie, fin de mois)</div>
+  <div class="zoom-body"><div class="shot" data-cap="gov-conc"><img src="img/gov-conc.png"><span class="mk" data-mk="1"></span><span class="mk" data-mk="4" data-label="2"></span><span class="mk" data-mk="5" data-label="3"></span><span class="mk" data-mk="2" data-label="4"></span></div>
+  <ol class="legend"><li><b>1</b><span>Approaching : 78 % le 30 octobre</span></li><li><b>2</b><span>Les transactions longues de l'heure de pic</span></li><li><b>3</b><span>Qui tient le « permis » Concurrent Apex</span></li><li class="key"><b>4</b><span>How to Fix → une investigation <b>Concurrent Apex</b></span></li></ol></div></div>
+<span class="fragment rd-trigger" data-fragment-index="4" data-show="z-gov-api"></span>
+<span class="fragment rd-trigger" data-fragment-index="5" data-add-class="z-gov-api:gone" data-show="z-gov-async"></span>
+<span class="fragment rd-trigger" data-fragment-index="6" data-add-class="z-gov-async:gone" data-show="z-gov-conc"></span>
+<div id="z-gov-bulk" class="rd-hidden zoom"><div class="zoom-head">🔍 Panneaux <b>Bulk API 2.0 Rows</b> et <b>Bulk API Batches</b></div>
+  <div class="zoom-body"><div class="shots" style="gap:.3em"><div class="shot" data-cap="gov-bulk2"><img src="img/gov-bulk2.png" style="max-height:300px"><span class="mk" data-mk="1"></span></div><div class="shot" data-cap="gov-bulkb"><img src="img/gov-bulkb.png" style="max-height:110px"><span class="mk" data-mk="1" data-label="2"></span></div></div>
+  <ol class="legend"><li class="key"><b>1</b><span>Qui consomme ? Un <b>connecteur Data Cloud</b>, qui tourne en arrière-plan sans que personne y pense</span></li><li><b>2</b><span>Les jobs Dataloader : « <b>User Name not Available</b> ». On sait que ça consomme, pas toujours qui</span></li></ol></div></div>
+<div id="z-gov-pe" class="rd-hidden zoom"><div class="zoom-head">🔍 Panneau <b>High Volume Platform Events Published</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="gov-pe"><img src="img/gov-pe.png" style="max-height:420px"><span class="mk" data-mk="1"></span><span class="mk" data-mk="2"></span></div>
+  <ol class="legend"><li><b>1</b><span>Les types d'événements publiés</span></li><li class="key"><b>2</b><span>Top Publishers : qui les publie ?</span></li></ol></div>
+  <div id="n-pe" class="rd-hidden note-pop pe">🕵️ <strong>Qui publie ces 8 433 événements ?</strong> Mystère : les colonnes Namespace et Client ID sont vides. À vous de mener l'enquête.</div></div>
+<span class="fragment rd-trigger" data-fragment-index="7" data-add-class="z-gov-conc:gone" data-show="z-gov-bulk"></span>
+<span class="fragment rd-trigger" data-fragment-index="8" data-add-class="z-gov-bulk:gone" data-show="z-gov-pe"></span>
+<span class="fragment rd-trigger" data-fragment-index="9" data-show="n-pe"></span>
+<span class="fragment rd-trigger" data-fragment-index="10" data-add-class="z-gov-pe:gone"></span>
+<aside class="notes">Même quand tout est « Safe », les tableaux restent remplis : c'est la carte des plus gros consommateurs · chaque panneau propose une investigation différente (Consolidated, Apex Summary, Concurrent Apex) · non montrés : Concurrent API Calls (même tableau que API Request) et Concurrent UI Requests (sources /aura, /apexremote…)</aside>
+
+</section>
+<section id="v-lex">
+<div class="crumb">📍 Scale Insights › <b>Lightning Experience Insights</b></div>
+<p class="kicker">La visite · Scale Insights</p>
+<h2>Lightning Experience Insights</h2>
+<p class="what">Ce qu'il met en avant : <b>ce que l'utilisateur ressent (EPT au P75)</b></p>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="lex" style="--mh:480px"><img src="img/lex.png">
+    <span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-fragment-index="2"></span><span class="mk fragment" data-mk="3" data-fragment-index="3"></span></div></div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>Pourquoi le P75 et pas la moyenne</span></li>
+    <li class="fragment" data-fragment-index="2"><b>2</b><span>1ʳᵉ page (cache froid) vs pages suivantes</span></li>
+    <li class="fragment key" data-fragment-index="3"><b>3</b><span>Checklist auto : CDN, cache, boxcar'ing, 0 % de cache Apex, actions Apex lentes</span></li>
+  </ol>
+</div>
+<div id="zx1" class="rd-hidden zoom"><div class="zoom-head">🔍 ① <b>EPT au P75</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="lx-z1"><img src="img/lx-z1.png"></div>
+  <ol class="legend"><li class="key"><b>1</b><span>L'outil explique lui-même son choix : le P75 plutôt que la médiane ou la moyenne, pour voir l'expérience des utilisateurs les plus lents</span></li></ol></div></div>
+<div id="zx2" class="rd-hidden zoom"><div class="zoom-head">🔍 ② <b>Les 4 chiffres de la semaine</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="lx-z2"><img src="img/lx-z2.png"></div>
+  <ol class="legend"><li class="key"><b>2</b><span>1ʳᵉ page (cache froid) : 5,4 s · pages suivantes : 1,2 s · 1,1 M vues, dont 5,8 % de premières pages</span></li></ol></div></div>
+<div id="zx3" class="rd-hidden zoom"><div class="zoom-head">🔍 ③ <b>Key Insights</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="lx-z3"><img src="img/lx-z3.png"></div>
+  <ol class="legend"><li class="key"><b>3</b><span>Une checklist automatique : CDN, cache navigateur, boxcar'ing… 0 % des actions Apex servies par le cache, et la liste des actions Apex qui ralentissent les pages (✦ = ApexGuru a une recommandation)</span></li></ol></div></div>
+<span class="fragment rd-trigger" data-fragment-index="1" data-show="zx1"></span>
+<span class="fragment rd-trigger" data-fragment-index="2" data-add-class="zx1:gone" data-show="zx2"></span>
+<span class="fragment rd-trigger" data-fragment-index="3" data-add-class="zx2:gone" data-show="zx3"></span>
+<aside class="notes">Onglet Usage (beta) : DAU, navigateurs, pays · un zoom par zone, le 3 reste affiché en fin de slide</aside>
+
+</section>
+<section id="v-lex-pages">
+<div class="crumb">📍 Lightning Experience Insights › <b>Performance Insights</b></div>
+<p class="kicker">La visite · Scale Insights</p>
+<h2>Qui rame, où, sur quoi</h2>
+<p class="what">Ce qu'il met en avant : <b>volume × lenteur = votre roadmap perf</b></p>
+<div class="tour">
+<div class="shots">
+  <div class="shot" data-cap="lex-geo" style="--mh:300px"><img src="img/lex-geo.png"><span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-fragment-index="2"></span></div>
+  <div class="shot fragment pop" data-fragment-index="3" data-cap="lex-pages" style="--mh:330px"><img src="img/lex-pages.png"><span class="mk" data-mk="1" data-label="3"></span><span class="mk fragment" data-mk="2" data-label="4" data-fragment-index="4"></span></div>
+</div>
+<ol class="legend">
+  <li class="fragment" data-fragment-index="1"><b>1</b><span>Par pays (au survol : EPT, vues, part du trafic)</span></li>
+  <li class="fragment" data-fragment-index="2"><b>2</b><span>Par navigateur</span></li>
+  <li class="fragment key" data-fragment-index="3"><b>3</b><span>La page à fort trafic ET lente</span></li>
+  <li class="fragment" data-fragment-index="4"><b>4</b><span>La page la plus lente… peu vue</span></li>
+</ol>
+</div>
+
+
+<div id="z-drill" class="rd-hidden zoom"><div class="zoom-head">🔍 On déplie une page : <b>page → composants custom → actions Apex</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="lex-drill"><img src="img/lex-drill.png"><span class="mk" data-mk="1"></span><span class="mk" data-mk="2"></span><span class="mk" data-mk="4" data-label="3"></span><span class="mk" data-mk="3" data-label="4"></span></div>
+  <ol class="legend"><li><b>1</b><span>La page Contrat : 22 % du trafic, 6 380 ms</span></li><li><b>2</b><span>Ses composants custom (le nouveau <code>wdfSuiviConso</code>)</span></li><li><b>3</b><span>Pour chaque action : cache, boxcar, temps serveur, TTFB, durée…</span></li><li class="key"><b>4</b><span>L'action coupable, avec l'icône ✦ : une recommandation ApexGuru l'attend</span></li></ol></div></div>
+<span class="fragment rd-trigger" data-fragment-index="5" data-show="z-drill"></span>
+<aside class="notes">Seuls les composants custom sont listés : ceux sur lesquels on peut agir · le drill-down relie la page lente à l'action Apex, et ApexGuru prend le relais</aside>
+
+</section>
+<section id="v-lex-usage">
+<div class="crumb">📍 Lightning Experience Insights › <b>Usage Insights</b> (Beta)</div>
+<p class="kicker">La visite · Scale Insights</p>
+<h2>Qui utilise quoi, et d'où</h2>
+<p class="what">Ce qu'il met en avant : <b>l'usage réel, pour ne plus optimiser ce que personne n'utilise</b></p>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="lex-usage" style="--mh:470px"><img src="img/lex-usage.png"><span class="mk fragment" data-mk="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-fragment-index="2"></span><span class="mk fragment" data-mk="3" data-fragment-index="3"></span><span class="mk fragment" data-mk="4" data-fragment-index="4"></span><span class="mk fragment" data-mk="5" data-fragment-index="5"></span></div></div>
+  <ol class="legend">
+    <li class="fragment" data-fragment-index="1"><b>1</b><span>Vues et utilisateurs actifs par jour (DAU)</span></li>
+    <li class="fragment" data-fragment-index="2"><b>2</b><span>Premières visites vs navigations, heure par heure</span></li>
+    <li class="fragment" data-fragment-index="3"><b>3</b><span>D'où viennent les vues</span></li>
+    <li class="fragment" data-fragment-index="4"><b>4</b><span>Quels navigateurs</span></li>
+    <li class="fragment key" data-fragment-index="5"><b>5</b><span>Les pages les plus utilisées</span></li>
+  </ol>
+</div>
+
+<div id="zu1" class="rd-hidden zoom"><div class="zoom-head">🔍 ① <b>Les chiffres de la semaine</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="lex-u-kpis"><img src="img/lex-u-kpis.png"></div>
+  <ol class="legend"><li class="key"><b>1</b><span>Vues moyennes par jour, vues totales sur 7 jours, utilisateurs actifs par jour (DAU)</span></li></ol></div></div>
+<div id="zu2" class="rd-hidden zoom"><div class="zoom-head">🔍 ② <b>Page Views Trends · Daily Active Users (DAU) Trends</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="lex-u-trends"><img src="img/lex-u-trends.png"></div>
+  <ol class="legend"><li><b>2</b><span>Heure par heure sur 7 jours : premières pages d'une session (bleu) et navigations suivantes (orange), en vues et en utilisateurs</span></li></ol></div></div>
+<div id="zu3" class="rd-hidden zoom"><div class="zoom-head">🔍 ③ <b>Usage by Region or Country</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="lex-u-map"><img src="img/lex-u-map.png"></div>
+  <ol class="legend"><li><b>3</b><span>D'où viennent les vues ; au survol : vues, part du trafic, DAU et EPT du pays</span></li></ol></div></div>
+<div id="zu4" class="rd-hidden zoom"><div class="zoom-head">🔍 ④ <b>Usage by Browser</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="lex-u-br"><img src="img/lex-u-br.png"></div>
+  <ol class="legend"><li><b>4</b><span>Vues, part du total et DAU par navigateur : à croiser avec l'EPT par navigateur de l'onglet Performance</span></li></ol></div></div>
+<div id="zu5" class="rd-hidden zoom"><div class="zoom-head">🔍 ⑤ <b>Most Used Pages</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="lex-mostused"><img src="img/lex-mostused.png"></div>
+  <ol class="legend"><li class="key"><b>5</b><span>Les pages les plus vues, avec leurs utilisateurs actifs et leur EPT</span></li></ol></div></div>
+<span class="fragment rd-trigger" data-fragment-index="1" data-show="zu1"></span>
+<span class="fragment rd-trigger" data-fragment-index="2" data-add-class="zu1:gone" data-show="zu2"></span>
+<span class="fragment rd-trigger" data-fragment-index="3" data-add-class="zu2:gone" data-show="zu3"></span>
+<span class="fragment rd-trigger" data-fragment-index="4" data-add-class="zu3:gone" data-show="zu4"></span>
+<span class="fragment rd-trigger" data-fragment-index="5" data-add-class="zu4:gone" data-show="zu5"></span>
+<aside class="notes">Beta · un zoom par partie · croiser avec Performance : Safari est lent mais n'a qu'un utilisateur → faible priorité · les creux de la courbe = fenêtres de déploiement (le 14h10 du fil 1 tombe au sommet)</aside>
+
+</section>
+<section id="v-autres">
+<div class="crumb">📍 Scale Insights › <b>Report · Search · Multi-Framework</b></div>
+<p class="kicker">La visite · Scale Insights</p>
+<h2>Trois quick wins</h2>
+<div class="tour" style="grid-template-columns:1fr 1fr 1fr;gap:.5em">
+  <div><div class="shot" data-cap="report" style="--mh:250px"><img src="img/report.png"><span class="mk fragment" data-mk="2" data-label="1" data-fragment-index="1"></span></div>
+    <p class="what fragment" data-fragment-index="1" style="margin-top:.4em"><b>Report</b> : le rapport le plus cher n'est pas le plus lent, c'est le plus lancé</p></div>
+  <div class="fragment" data-fragment-index="2"><div class="shot" data-cap="search" style="--mh:250px"><img src="img/search.png"><span class="mk" data-mk="1" data-label="2"></span></div>
+    <p class="what" style="margin-top:.4em"><b>Search</b> : objets indexés jamais cherchés → décocher « Allow Search »</p></div>
+  <div class="fragment" data-fragment-index="3"><div class="shot" data-cap="mf" style="--mh:250px"><img src="img/mf.png"><span class="mk" data-mk="2" data-label="3"></span></div>
+    <p class="what" style="margin-top:.4em"><b>Multi-Framework (beta)</b> : la perf des applis React… vide chez nous 🌵</p></div>
+</div>
+
+<div id="za1" class="rd-hidden zoom"><div class="zoom-head">🔍 <b>Report Insights</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="report"><img src="img/report.png" style="max-height:470px"><span class="mk" data-mk="1"></span><span class="mk" data-mk="2"></span></div>
+  <ol class="legend"><li><b>1</b><span>Les 10 rapports les plus lents, en temps moyen</span></li><li class="key"><b>2</b><span>« Conso de tout le monde depuis 1946 » : 413 ms en moyenne… lancé 13 800 fois = le plus coûteux au total</span></li></ol></div></div>
+<div id="za2" class="rd-hidden zoom"><div class="zoom-head">🔍 <b>Search Insights</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="search"><img src="img/search.png" style="max-height:470px"><span class="mk" data-mk="1"></span><span class="mk" data-mk="2"></span></div>
+  <ol class="legend"><li class="key"><b>1</b><span>Objets indexés des centaines de milliers de fois… et jamais cherchés</span></li><li><b>2</b><span>Objets cherchés mais jamais cliqués dans les résultats</span></li><li><b>→</b><span>Le correctif : décocher « Allow Search » dans Object Manager, sans code</span></li></ol></div></div>
+<div id="za3" class="rd-hidden zoom"><div class="zoom-head">🔍 <b>Multi-Framework Insights</b> (Beta)</div>
+  <div class="zoom-body"><div class="shot" data-cap="mf"><img src="img/mf.png" style="max-height:470px"><span class="mk" data-mk="1"></span><span class="mk" data-mk="2"></span></div>
+  <ol class="legend"><li><b>1</b><span>Un service <b>Beta</b> : la perf (EPT au P75) des applis construites avec d'autres frameworks que LWC, React par exemple</span></li><li class="key"><b>2</b><span>Pas d'appli React chez nous : pas de données 🌵</span></li></ol></div></div>
+<span class="fragment rd-trigger" data-fragment-index="4" data-show="za1"></span>
+<span class="fragment rd-trigger" data-fragment-index="5" data-add-class="za1:gone" data-show="za2"></span>
+<span class="fragment rd-trigger" data-fragment-index="6" data-add-class="za2:gone" data-show="za3"></span>
+<aside class="notes">Report : 413 ms × 13 800 = 5,7 M ms · Search : quick win admins, sans code</aside>
+
+</section>
+<section id="partie2">
+<div class="bloc-center">
+  <div class="bloc-num">Partie 2</div>
+  <h1>Deux enquêtes</h1>
+  <p class="bloc-sub">Où Scale Center s'inscrit dans l'analyse</p>
+  <div class="pills"><span class="pill">Détecter</span><span class="pill">Localiser</span><span class="pill">Expliquer</span><span class="pill">Corriger</span><span class="pill">Vérifier</span></div>
+</div>
+<aside class="notes">Mêmes écrans que la visite, mais dans l'ordre du raisonnement · la frise en haut dit où on en est</aside>
+
+</section>
+<section id="fil1">
+<div class="bloc-center">
+  <div class="bloc-num">Enquête n°1 · réagir</div>
+  <h1>Le déploiement du mardi</h1>
+  <p class="bloc-sub">Watt De France — « Changeons d'énergie… mais pas en prod un vendredi »</p>
+  <div class="pills"><span class="pill">~3 000 utilisateurs</span><span class="pill">~1 100 classes Apex</span><span class="pill">160 000 cases / semaine</span></div>
+</div>
+<aside class="notes">SAV énergie · mardi 14 h 10 : release « Suivi conso » · lundi suivant, on regarde</aside>
+
+</section>
+<section id="e1-detecter" data-kicker="Enquête 1 · Détecter">
+<div class="process"><span class="on">Détecter</span><i>→</i><span>Localiser</span><i>→</i><span>Expliquer</span><i>→</i><span>Corriger</span><i>→</i><span>Vérifier</span></div>
+<div class="crumb">📍 <b>Org Overview</b></div>
+<h2>Le lundi suivant, on regarde la semaine</h2>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="ov-peak" style="--mh:200px"><img src="img/ov-peak.png"><span class="mk fragment" data-mk="1" data-label="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-label="2" data-fragment-index="2"></span></div><div class="shot fragment" data-fragment-index="3" data-cap="ov-top3" style="--mh:260px"><img src="img/ov-top3.png"><span class="mk" data-mk="2" data-label="3"></span></div></div>
+  <div class="qa">
+    <div class="q">Q : la semaine du 2 au 8 novembre s'est-elle bien passée ?</div>
+    <div class="a fragment" data-fragment-index="1">① Le pic : mardi 3 nov., de 14 h à 15 h</div>
+    <div class="a fragment" data-fragment-index="2">② Le lendemain : Concurrent Apex +3 900 %</div>
+    <div class="a fragment" data-fragment-index="3">③ N°1 du podium : <code>WDF_ConsoController</code>… une classe livrée ce mardi-là</div>
+  </div>
+</div>
+<aside class="notes">Le podium donne un nom · la classe est nouvelle → suspect : le déploiement de mardi</aside>
+
+</section>
+<section id="e1-localiser" data-kicker="Enquête 1 · Localiser">
+<div class="process"><span class="done">Détecter</span><i>→</i><span class="on">Localiser</span><i>→</i><span>Expliquer</span><i>→</i><span>Corriger</span><i>→</i><span>Vérifier</span></div>
+<div class="crumb">📍 <b>Deployment Insights</b></div>
+<h2>Quel déploiement ? Celui du mardi 3.</h2>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="dep-key" style="--mh:440px"><img src="img/dep-key.png"><span class="mk fragment" data-mk="1" data-label="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="4" data-label="2" data-fragment-index="2"></span></div></div>
+  <div class="qa">
+    <div class="q">Q : la release a-t-elle aidé ou abîmé la prod ?</div>
+    <div class="a fragment" data-fragment-index="1">① Erreurs −22 %… mais App CPU +85 %</div>
+    <div class="a fragment" data-fragment-index="2">② Déployée mardi 14 h 10, en plein pic</div>
+  </div>
+</div>
+<aside class="notes">Bonne ET mauvaise nouvelle · popup « 14 h 10 »</aside>
+<span class="fragment rd-trigger" data-popup-show="pop-14h"></span>
+<span class="fragment rd-trigger" data-popup-expand="pop-14h"></span>
+<span class="fragment rd-trigger" data-popup-close="pop-14h"></span>
+</section>
+<section id="e1-expliquer" data-kicker="Enquête 1 · Expliquer">
+<div class="process"><span class="done">Détecter</span><i>→</i><span class="done">Localiser</span><i>→</i><span class="on">Expliquer</span><i>→</i><span>Corriger</span><i>→</i><span>Vérifier</span></div>
+<div class="crumb">📍 Deployment Insights › <b>Infrastructure</b> · LEX Insights › <b>pages</b></div>
+<h2>Qui paie le CPU ? La page Contrat.</h2>
+<div class="tour">
+  <div class="shots">
+    <div class="shot" data-cap="dep-infra" style="--mh:300px"><img src="img/dep-infra.png"><span class="mk fragment" data-mk="2" data-label="1" data-fragment-index="1"></span></div>
+    <div class="shot fragment pop" data-fragment-index="2" data-cap="lex-pages" style="--mh:300px"><img src="img/lex-pages.png"><span class="mk" data-mk="1" data-label="2"></span></div>
+    <div class="shot fragment pop" data-fragment-index="3" data-cap="lex-drill" style="--mh:340px"><img src="img/lex-drill.png"><span class="mk" data-mk="2" data-label="3"></span><span class="mk fragment" data-mk="3" data-label="4" data-fragment-index="4"></span></div>
+  </div>
+  <div class="qa">
+    <div class="q">Q : où passe le CPU en plus ?</div>
+    <div class="a fragment" data-fragment-index="1">① <code>getHistorique</code> : +1 150 ms, +640 exécutions &gt; 5 s</div>
+    <div class="a fragment" data-fragment-index="2">② LEX : la page Contrat = 22 % du trafic, 6,4 s</div>
+    <div class="a fragment" data-fragment-index="3">③ Dans la page : le nouveau LWC <code>wdfSuiviConso</code></div>
+    <div class="a fragment" data-fragment-index="4">④ Son action Apex <code>getHistorique</code> : 7,4 s par appel, et l'icône ✦ ApexGuru</div>
+  </div>
+</div>
+<aside class="notes">Le composant ajouté sur la page Contrat appelle getHistorique · impact : 1 200 conseillers</aside>
+
+</section>
+<section id="e1-corriger" data-kicker="Enquête 1 · Corriger">
+<div class="process"><span class="done">Détecter</span><i>→</i><span class="done">Localiser</span><i>→</i><span class="done">Expliquer</span><i>→</i><span class="on">Corriger</span><i>→</i><span>Vérifier</span></div>
+<div class="crumb">📍 <b>ApexGuru Insights</b></div>
+<h2>Une SOQL dans une boucle</h2>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="ag-code" style="--mh:460px"><img src="img/ag-code.png"><span class="mk fragment" data-mk="4" data-label="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="5" data-label="2" data-fragment-index="2"></span></div></div>
+  <div class="qa">
+    <div class="q">Q : que faut-il changer ?</div>
+    <div class="a fragment" data-fragment-index="1">① Critical : <code>getHistorique</code>, SOQL par compteur (N+1)</div>
+    <div class="a fragment" data-fragment-index="2">② Le correctif : 1 requête <code>IN :ids</code>, regroupement en mémoire</div>
+  </div>
+</div>
+<aside class="notes">2,4 M relevés · le correctif est proposé, un humain le relit · Code Analyzer en CI pour la prochaine fois</aside>
+
+</section>
+<section id="e1-verifier" data-kicker="Enquête 1 · Vérifier">
+<div class="process"><span class="done">Détecter</span><i>→</i><span class="done">Localiser</span><i>→</i><span class="done">Expliquer</span><i>→</i><span class="done">Corriger</span><i>→</i><span class="on">Vérifier</span></div>
+<div class="crumb">📍 <b>Deployment Insights</b> (hotfix)</div>
+<h2>Jeudi : le hotfix, mesuré</h2>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="dep-fix" style="--mh:440px"><img src="img/dep-fix.png"><span class="mk fragment" data-mk="1" data-label="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-label="2" data-fragment-index="2"></span></div></div>
+  <div class="qa">
+    <div class="q">Q : c'est réglé ?</div>
+    <div class="a fragment" data-fragment-index="1">① App CPU −45 %, UI −35 %</div>
+    <div class="a fragment" data-fragment-index="2">② Un 2ᵉ rapport, sur le déploiement du hotfix</div>
+  </div>
+</div>
+<aside class="notes">Boucle bouclée · 4 écrans : Overview → Deployment → LEX → ApexGuru → Deployment</aside>
+
+</section>
+<section id="fil2">
+<div class="bloc-center">
+  <div class="bloc-num">Enquête n°2 · anticiper</div>
+  <h1>Le pic de fin de mois</h1>
+  <p class="bloc-sub">EnGénie Mutuelle — « La mutuelle qui a de l'idée (sauf dans ses triggers) »</p>
+  <div class="pills"><span class="pill">~1 400 utilisateurs</span><span class="pill">demandes de remboursement ×3 en fin de mois</span><span class="pill">vendredi 30 octobre</span></div>
+</div>
+<aside class="notes">Remboursements · batch de fin de mois + gestionnaires en même temps</aside>
+
+</section>
+<section id="e2-detecter" data-kicker="Enquête 2 · Détecter">
+<div class="process"><span class="on">Détecter</span><i>→</i><span>Localiser</span><i>→</i><span>Expliquer</span><i>→</i><span>Corriger</span><i>→</i><span>Vérifier</span></div>
+<div class="crumb">📍 <b>Governor Limit Insights · Alerts</b></div>
+<h2>Deux signaux le même jour</h2>
+<div class="tour">
+  <div class="shots">
+    <div class="shot" data-cap="gov" style="--mh:400px"><img src="img/gov.png"><span class="mk fragment" data-mk="2" data-label="1" data-fragment-index="1"></span></div>
+    <div class="shot fragment pop" data-fragment-index="2" data-cap="alerts-hist" style="--mh:280px"><img src="img/alerts-hist.png"><span class="mk" data-mk="2" data-label="2"></span></div>
+  </div>
+  <div class="qa">
+    <div class="q">Q : la fin de mois tient-elle ?</div>
+    <div class="a fragment" data-fragment-index="1">① Concurrent Apex à 78 % : « Approaching »</div>
+    <div class="a fragment" data-fragment-index="2">② Alerte Row Lock active, vendredi 10 h 30</div>
+  </div>
+</div>
+<aside class="notes">Pas encore la panne : le moment où on peut l'éviter</aside>
+
+</section>
+<section id="e2-localiser" data-kicker="Enquête 2 · Localiser">
+<div class="process"><span class="done">Détecter</span><i>→</i><span class="on">Localiser</span><i>→</i><span>Expliquer</span><i>→</i><span>Corriger</span><i>→</i><span>Vérifier</span></div>
+<div class="crumb">📍 Org Performance → <b>Performance Analysis</b></div>
+<h2>Le pic : 10 h 20 – 10 h 50</h2>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="orgperf-sel" style="--mh:440px"><img src="img/orgperf-sel.png"><img class="over fragment" data-fragment-index="2" src="img/orgperf-menu.png"><span class="mk fragment" data-mk="1" data-label="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-cap="orgperf-menu" data-label="2" data-fragment-index="2"></span></div></div>
+  <div class="qa">
+    <div class="q">Q : que se passe-t-il pendant ces 30 minutes ?</div>
+    <div class="a fragment" data-fragment-index="1">① On sélectionne le pic de Row Lock</div>
+    <div class="a fragment" data-fragment-index="2">② Start Analysis → Consolidated Report « Fin de mois 30/10 »</div>
+  </div>
+</div>
+<aside class="notes">Le geste vu dans la visite, en situation</aside>
+
+</section>
+<section id="e2-verrou" data-kicker="Enquête 2 · Expliquer">
+<div class="process"><span class="done">Détecter</span><i>→</i><span class="done">Localiser</span><i>→</i><span class="on">Expliquer</span><i>→</i><span>Corriger</span><i>→</i><span>Vérifier</span></div>
+<div class="crumb">📍 Consolidated Report › <b>Row Lock</b></div>
+<h2>1 enregistrement, 418 personnes</h2>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="cons-row" style="--mh:440px"><img src="img/cons-row.png"><span class="mk fragment" data-mk="1" data-label="1" data-fragment-index="1"></span><span class="mk fragment" data-mk="2" data-label="2" data-fragment-index="2"></span><span class="mk fragment" data-mk="3" data-label="3" data-fragment-index="3"></span></div></div>
+  <div class="qa">
+    <div class="q">Q : qui se bat pour quoi ?</div>
+    <div class="a fragment" data-fragment-index="1">① 100 % sur un seul objet</div>
+    <div class="a fragment" data-fragment-index="2">② Un seul enregistrement : « Numéro de décompte »</div>
+    <div class="a fragment" data-fragment-index="3">③ Le batch bloque, les gestionnaires attendent</div>
+  </div>
+</div>
+<aside class="notes">Enregistrement chaud · FOR UPDATE dans genererNumero · popup</aside>
+<span class="fragment rd-trigger" data-popup-show="pop-hot"></span>
+<span class="fragment rd-trigger" data-popup-close="pop-hot"></span>
+</section>
+<section id="e2-ligne58" data-kicker="Enquête 2 · Expliquer">
+<div class="process"><span class="done">Détecter</span><i>→</i><span class="done">Localiser</span><i>→</i><span class="on">Expliquer</span><i>→</i><span>Corriger</span><i>→</i><span>Vérifier</span></div>
+<div class="crumb">📍 Apex Summary · <b>Database Insights</b></div>
+<h2>Et pourquoi c'est si long ? Ligne 58.</h2>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="cons-soql" style="--mh:300px"><img src="img/cons-soql.png"></div></div>
+  <div class="qa">
+    <div class="q">Q : pourquoi les verrous durent-ils ?</div>
+    <div class="a fragment" data-fragment-index="1">① Ligne 58 : 84 % du temps SOQL, 97 % &gt; 5 s</div>
+    <div class="a fragment" data-fragment-index="2">② En régression : +620 % sur la semaine</div>
+    <div class="a fragment" data-fragment-index="3">③ Dev Console : TableScan, Statut__c non indexé</div>
+  </div>
+</div>
+<div id="zl1" class="rd-hidden zoom"><div class="zoom-head">🔍 ① Apex Summary › <b>Top 5 Expensive SOQLs</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="cons-soql"><img src="img/cons-soql.png"><span class="mk" data-mk="1"></span><span class="mk" data-mk="2"></span></div>
+  <ol class="legend"><li><b>1</b><span>La requête la plus coûteuse : 84 % du temps SOQL, 97 % au-delà de 5 s</span></li><li class="key"><b>2</b><span>Ligne 58 de <code>ENG_PrestationSelector</code></span></li></ol></div></div>
+<div id="zl2" class="rd-hidden zoom"><div class="zoom-head">🔍 ② Database Insights › <b>Regressed SOQLs</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="db-reg"><img src="img/db-reg.png"><span class="mk" data-mk="1"></span><span class="mk" data-mk="2"></span></div>
+  <ol class="legend"><li><b>1</b><span>Critical : chère et fréquente pendant le pic</span></li><li class="key"><b>2</b><span>La même requête : <b>+620 %</b> sur la semaine, et la recommandation « filtre date + index »</span></li></ol></div></div>
+<div id="zl3" class="rd-hidden zoom"><div class="zoom-head">🔍 ③ Developer Console › <b>Query Plan</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="db-devc"><img src="img/db-devc.png"><span class="mk" data-mk="1"></span><span class="mk" data-mk="2"></span></div>
+  <ol class="legend"><li><b>1</b><span><b>TableScan</b> sur 2,1 M lignes, coût 1,81</span></li><li class="key"><b>2</b><span>Le champ fautif : <code>Statut__c</code> non indexé</span></li></ol></div></div>
+<span class="fragment rd-trigger" data-fragment-index="1" data-show="zl1"></span>
+<span class="fragment rd-trigger" data-fragment-index="2" data-add-class="zl1:gone" data-show="zl2"></span>
+<span class="fragment rd-trigger" data-fragment-index="3" data-add-class="zl2:gone" data-show="zl3"></span>
+<span class="fragment rd-trigger" data-fragment-index="4" data-add-class="zl3:gone"></span>
+<aside class="notes">La transaction lente garde le verrou plus longtemps → les deux problèmes s'aggravent</aside>
+<span class="fragment rd-trigger" data-popup-show="pop-ligne58"></span>
+<span class="fragment rd-trigger" data-popup-close="pop-ligne58"></span>
+</section>
+<section id="e2-corriger" data-kicker="Enquête 2 · Corriger">
+<div class="process"><span class="done">Détecter</span><i>→</i><span class="done">Localiser</span><i>→</i><span class="done">Expliquer</span><i>→</i><span class="on">Corriger</span><i>→</i><span>Vérifier</span></div>
+<div class="crumb">📍 <b>ApexGuru Insights</b></div>
+<h2>Les correctifs</h2>
+<div class="tour">
+  <div class="shots"><div class="shot" data-cap="ag-eng" style="--mh:330px"><img src="img/ag-eng.png"><span class="mk fragment" data-mk="2" data-label="1" data-fragment-index="1"></span></div>
+    <div class="shot fragment pop" data-fragment-index="2" data-cap="ag-eng-soql" style="--mh:300px"><div class="pop-tag">↪ onglet « SOQL/DML Analysis » · ligne 58</div><img src="img/ag-eng-soql.png"><span class="mk" data-mk="2" data-label="2"></span></div></div>
+  <div class="qa">
+    <div class="a fragment" data-fragment-index="1">① 1 verrou par scope de batch, pas par décompte (ou Auto Number)</div>
+    <div class="a fragment" data-fragment-index="2">② Ligne 58 : filtre date (<code>Date_Soins__c</code>) + index sur <code>Statut__c</code></div>
+  </div>
+</div>
+<aside class="notes">L'outil trouve tout, mais ne corrige que le code · la conception de données reste à vous</aside>
+
+</section>
+<section id="e2-verifier" data-kicker="Enquête 2 · Vérifier">
+<div class="process"><span class="done">Détecter</span><i>→</i><span class="done">Localiser</span><i>→</i><span class="done">Expliquer</span><i>→</i><span class="done">Corriger</span><i>→</i><span class="on">Vérifier</span></div>
+<h2>Au prochain 30 du mois</h2>
+<div class="v-flow">
+  <div class="v-box">Deployment Insights<small>sur le déploiement des correctifs</small></div><div class="v-arrow fragment" data-fragment-index="1">→</div>
+  <div class="v-box fragment" data-fragment-index="1">Governor Limit Insights<small>Concurrent Apex repasse « Safe » ?</small></div><div class="v-arrow fragment" data-fragment-index="2">→</div>
+  <div class="v-box v-ok fragment" data-fragment-index="2">Alerts<small>pas d'e-mail Row Lock le 30 novembre</small></div>
+</div>
+<aside class="notes">Anticiper = vérifier avant le prochain pic, pas après</aside>
+
+</section>
+<section id="outils">
+<p class="kicker">Qui fait quoi</p>
+<h2>Scale Center et ses voisins</h2>
+<table class="sc">
+  <tr><th></th><th>Portée</th><th>Question</th><th>Coût</th></tr>
+  <tr><td><b>Debug Logs</b></td><td>1 transaction</td><td>que s'est-il passé, ligne à ligne ?</td><td class="yes">inclus</td></tr>
+  <tr><td><b>Event Monitoring</b></td><td>événements bruts</td><td>qui a fait quoi, quand ?</td><td class="no">option payante</td></tr>
+  <tr><td><b>Optimizer / Health Check</b></td><td>configuration</td><td>mon org est-elle bien paramétrée ?</td><td class="yes">inclus</td></tr>
+  <tr class="fragment"><td><b>Scale Center</b></td><td>toute l'org, à l'échelle</td><td>où ça coince, dans quel code ?</td><td class="yes">inclus</td></tr>
+  <tr class="fragment"><td><b>Proactive Monitoring</b></td><td>service humain</td><td>quelqu'un surveille pour moi ?</td><td class="no">Signature</td></tr>
+</table>
+<aside class="notes">Complémentaires · Debug Logs pour creuser après Scale Center</aside>
+
+</section>
+<section id="anti-patterns">
+<p class="kicker">Ce que Scale Center trouve, encore et encore</p>
+<h2>Les anti-patterns de fond</h2>
+<div class="v-cards">
+  <div class="v-card"><span class="v-icon">🔁</span><strong>SOQL / DML en boucle</strong>N+1, limites de 101 requêtes</div>
+  <div class="v-card"><span class="v-icon">🐢</span><strong>SOQL non sélective</strong>pas d'index, pas de filtre date</div>
+  <div class="v-card"><span class="v-icon">🔥</span><strong>Enregistrement chaud</strong>verrou partagé, data skew</div>
+  <div class="v-card"><span class="v-icon">📦</span><strong>Non-bulkification</strong>traitement unitaire dans les triggers</div>
+  <div class="v-card"><span class="v-icon">🧭</span><strong>getGlobalDescribe()</strong>coût caché à chaque appel</div>
+  <div class="v-card"><span class="v-icon">📎</span><strong>Copier-coller</strong>312 K caractères dupliqués</div>
+</div>
+<aside class="notes">Aucun n'est nouveau · la nouveauté : on les voit sur la vraie charge, chiffrés, nommés</aside>
+
+</section>
+<section id="workflow">
+<p class="kicker">Le workflow recommandé</p>
+<h2>Une boucle, pas un audit annuel</h2>
+<div class="v-flow" style="font-size:.8em">
+  <div class="v-box">Alerts<small>être prévenu</small></div><div class="v-arrow">→</div>
+  <div class="v-box">Overview & Insights<small>détecter (semaine)</small></div><div class="v-arrow fragment" data-fragment-index="1">→</div>
+  <div class="v-box fragment" data-fragment-index="1">Performance Analysis<small>expliquer (30 min)</small></div><div class="v-arrow fragment" data-fragment-index="2">→</div>
+  <div class="v-box fragment" data-fragment-index="2">ApexGuru + Code Analyzer<small>corriger (et bloquer en CI)</small></div><div class="v-arrow fragment" data-fragment-index="3">→</div>
+  <div class="v-box v-ok fragment" data-fragment-index="3">Deployment Insights<small>vérifier</small></div>
+</div>
+<aside class="notes">Rituel hebdo de 15 min · Code Analyzer dans la CI empêche la régression d'arriver</aside>
+<span class="fragment rd-trigger" data-popup-show="pop-ci"></span>
+<span class="fragment rd-trigger" data-popup-close="pop-ci"></span>
+</section>
+<section id="limites-chiffres">
+<p class="kicker">Limites et pièges · les chiffres</p>
+<h2>Ce que l'outil ne vous laisse pas faire</h2>
+<table class="sc">
+  <tr><th style="width:24%">Écran</th><th>Limite</th></tr>
+  <tr class="fragment"><td><b>Deployment Insights</b></td><td>1 rapport / jour · 3 / 7 jours · attendre 24 h après le déploiement · déploiements des 25 derniers jours</td></tr>
+  <tr class="fragment"><td><b>Database Insights</b> &amp; autres Insights</td><td>1 génération / jour · 3 / 7 jours · un rapport = une semaine figée</td></tr>
+  <tr class="fragment"><td><b>Performance Analysis</b></td><td>Consolidated : 30 min max · 100 derniers rapports visibles · expirent après 30 jours</td></tr>
+  <tr class="fragment"><td><b>Org Performance</b></td><td>fenêtres de 4 / 12 / 24 h · au-delà de 12 h, plusieurs minutes de chargement</td></tr>
+  <tr class="fragment"><td><b>Activation</b></td><td>données ≈ 2 h après · rien d'antérieur · prod et sandbox Full uniquement</td></tr>
+  <tr class="fragment"><td><b>Export</b></td><td class="no"><b>PDF au mieux</b> (« Download PDF ») · <b>pas d'export Markdown</b> : rien à réinjecter dans un outil ou une IA</td></tr>
+</table>
+<aside class="notes">Quotas = choisir ses rapports · rétention courte → exporter · export : PDF seulement, pas de Markdown (d'où les captures d'écran de cette présentation)</aside>
+<span class="fragment rd-trigger" data-popup-show="pop-export"></span>
+<span class="fragment rd-trigger" data-popup-close="pop-export"></span>
+</section>
+<section id="limites">
+<p class="kicker">Limites et pièges</p>
+<h2>Les pièges à connaître</h2>
+<div class="v-cards">
+  <div class="v-card"><span class="v-icon">📄</span><strong>Export limité</strong>PDF au mieux, pas de Markdown : difficile à exploiter ailleurs</div>
+  <div class="v-card"><span class="v-icon">🆔</span><strong>IDs bruts</strong>flows, rapports, list views : à retrouver soi-même</div>
+  <div class="v-card"><span class="v-icon">🧊</span><strong>Rapports figés</strong>ApexGuru d'il y a un mois tant qu'on ne régénère pas</div>
+  <div class="v-card"><span class="v-icon">🤔</span><strong>Libellés ambigus</strong>« performance decreased » : lire le détail</div>
+  <div class="v-card"><span class="v-icon">⏳</span><strong>Mémoire courte</strong>25-30 jours : exporter avant que ça disparaisse</div>
+  <div class="v-card"><span class="v-icon">🧪</span><strong>Beta & conseils IA</strong>à relire, pas à appliquer aveuglément</div>
+</div>
+<aside class="notes">Outil jeune, qui évolue à chaque release · rien de bloquant</aside>
+
+</section>
+<section id="demain">
+<p class="kicker">Demain matin</p>
+<h2>Trois gestes, dix minutes</h2>
+<div class="v-flow">
+  <div class="v-box">1 · Ouvrir Scale Center<small>Setup › Scale Center (déjà actif ?)</small></div><div class="v-arrow fragment" data-fragment-index="1">→</div>
+  <div class="v-box fragment" data-fragment-index="1">2 · Mettre votre e-mail<small>dans Alerts</small></div><div class="v-arrow fragment" data-fragment-index="2">→</div>
+  <div class="v-box v-key fragment" data-fragment-index="2">3 · Générer ApexGuru<small>et lire le Critical</small></div>
+</div>
+<h2 class="fragment" style="text-align:center;margin-top:1em">Questions ?</h2>
+<aside class="notes">Gratuit, déjà là · maquette et PDF partagés après la session</aside>
+
+</section>
+</div>
+<div id="frag-indicator" aria-hidden="true">&#10033;</div>
+</div>
+
+<div id="pop-entracte" class="popup-overlay popup--tip popup--bottom-right" role="note">
+  <button class="popup-close" data-close="pop-entracte" title="Fermer" aria-label="Fermer">&#x2715;</button>
+  <div class="popup-teaser">🍿 <strong>Petit souci :</strong> comme Chacha n'a pas pensé à cliquer sur « Activer » avant le début de cette session, on va devoir attendre <strong>2 heures</strong>.<span class="popup-more-hint">&#9654; suite au prochain clic</span></div>
+  <div id="pop-entracte-body" class="popup-body"><span class="tw" style="--i:1">Je</span> <span class="tw" style="--i:2">vous</span> <span class="tw" style="--i:3">propose</span> <span class="tw" style="--i:4">donc</span> <span class="tw" style="--i:5">un</span> <span class="tw" style="--i:6">entracte,</span> <span class="tw" style="--i:7">le</span> <span class="tw" style="--i:8">temps</span> <span class="tw" style="--i:9">que</span> <span class="tw" style="--i:10">je</span> <span class="tw" style="--i:11">récupère</span> <span class="tw" style="--i:12">de</span> <span class="tw" style="--i:13">vrais</span> <span class="tw" style="--i:14">screenshots.</span> <span class="tw" style="--i:15">Les</span> <span class="tw" style="--i:16">commandes</span> <span class="tw" style="--i:17">sont</span> <span class="tw" style="--i:18">à</span> <span class="tw" style="--i:19">son</span> <span class="tw" style="--i:20">nom</span> <span class="tw" style="--i:21">:</span> <span class="tw" style="--i:22">faites-vous</span> <span class="tw" style="--i:23">plaisir</span> <span class="tw" style="--i:24">!</span></div>
+</div>
+<div id="pop-p75" class="popup-overlay popup--info popup--bottom-right" role="note">
+  <button class="popup-close" data-close="pop-p75" title="Fermer" aria-label="Fermer">&#x2715;</button>
+  📐 Sur un écran : « page Contrat · <strong>6 380 ms</strong> » = 3 chargements sur 4 en moins de 6,4 s. L'objectif : <strong>faire baisser ce chiffre</strong>, pas courir après chaque cas isolé.
+</div>
+<div id="pop-14h" class="popup-overlay popup--warn popup--top-right" role="note">
+  <button class="popup-close" data-close="pop-14h" title="Fermer" aria-label="Fermer">&#x2715;</button>
+  <div class="popup-teaser">🕑 Indice : le déploiement a eu lieu <strong>mardi à 14 h 10</strong>.<span class="popup-more-hint">&#9654; suite au prochain clic</span></div>
+  <div id="pop-14h-body" class="popup-body"><span class="tw" style="--i:1">En</span> <span class="tw" style="--i:2">plein</span> <span class="tw" style="--i:3">pic.</span> <span class="tw" style="--i:4">Quelqu'un</span> <span class="tw" style="--i:5">a</span> <span class="tw" style="--i:6">dit</span> <span class="tw" style="--i:7">«</span> <span class="tw" style="--i:8">c'est</span> <span class="tw" style="--i:9">juste</span> <span class="tw" style="--i:10">un</span> <span class="tw" style="--i:11">petit</span> <span class="tw" style="--i:12">composant</span> <span class="tw" style="--i:13">»</span> <span class="tw" style="--i:14">?</span><br><span class="pop-bot"><span class="pop-bot-face"><span class="tw" style="--i:15">🤖</span></span><span class="pop-bot-say"><span class="tw" style="--i:16">Chacha,</span> <span class="tw" style="--i:17">je</span> <span class="tw" style="--i:18">t'avais</span> <span class="tw" style="--i:19">dit</span> <span class="tw" style="--i:20">que</span> <span class="tw" style="--i:21">ton</span> <span class="tw" style="--i:22">composant</span> <span class="tw" style="--i:23">était</span> <span class="tw" style="--i:24">pourri.</span> <span class="tw" style="--i:25">T'aurais</span> <span class="tw" style="--i:26">mieux</span> <span class="tw" style="--i:27">fait</span> <span class="tw" style="--i:28">de</span> <span class="tw" style="--i:29">me</span> <span class="tw" style="--i:30">laisser</span> <span class="tw" style="--i:31">le</span> <span class="tw" style="--i:32">coder.</span></span></span></div>
+</div>
+<div id="pop-ligne58" class="popup-overlay popup--tip popup--top-right" role="note">
+  <button class="popup-close" data-close="pop-ligne58" title="Fermer" aria-label="Fermer">&#x2715;</button>
+  🎯 Une seule ligne de code = 84 % du temps SOQL de toute l'org pendant le pic.
+</div>
+<div id="pop-ci" class="popup-overlay popup--good popup--bottom-right" role="note">
+  <button class="popup-close" data-close="pop-ci" title="Fermer" aria-label="Fermer">&#x2715;</button>
+  ✅ La meilleure régression, c'est celle que la CI refuse de merger.
+</div>
+<div id="pop-hot" class="popup-overlay popup--tip popup--top-right" role="note">
+  <button class="popup-close" data-close="pop-hot" title="Fermer" aria-label="Fermer">&#x2715;</button>
+  🔥 L'enregistrement le plus populaire de la mutuelle : 418 personnes ont voulu le modifier en même temps. Il a dit non 418 fois.
+</div>
+<div id="pop-1mn" class="popup-overlay popup--tip popup--bottom-right" role="note">
+  <button class="popup-close" data-close="pop-1mn" title="Fermer" aria-label="Fermer">&#x2715;</button>
+  ⏱️ Un clic sur ④ « Analyze Org Health », et Scale Center calcule son diagnostic : environ <strong>1 minute</strong> d'attente.<br>Vous avez failli la subir… mais cette fois, j'ai cliqué avant d'arriver.
+</div>
+<div id="pop-apexguru-lettre" class="popup-overlay popup--warn popup--bottom-right" role="note">
+  <button class="popup-close" data-close="pop-apexguru-lettre" title="Fermer" aria-label="Fermer">&#x2715;</button>
+  <div class="popup-teaser">⚠️ <strong>À ne pas prendre au pied de la lettre :</strong> parfois, la SOQL dans un <code>for</code> est <em>volontaire</em>.<span class="popup-more-hint">&#9654; suite au prochain clic</span></div>
+  <div id="pop-apexguru-lettre-body" class="popup-body"><span class="tw" style="--i:1">Le</span> <span class="tw" style="--i:2">dev</span> <span class="tw" style="--i:3">avait</span> <span class="tw" style="--i:4">ses</span> <span class="tw" style="--i:5">raisons,</span> <span class="tw" style="--i:6">mais</span> <span class="tw" style="--i:7">l'IA</span> <span class="tw" style="--i:8">n'a</span> <span class="tw" style="--i:9">pas</span> <span class="tw" style="--i:10">lu</span> <span class="tw" style="--i:11">le</span> <span class="tw" style="--i:12">contexte</span> <span class="tw" style="--i:13">et</span> <span class="tw" style="--i:14">se</span> <span class="tw" style="--i:15">croit</span> <span class="tw" style="--i:16">plus</span> <span class="tw" style="--i:17">maligne.</span> <span class="tw" style="--i:18">Merci</span> <span class="tw" style="--i:19">les</span> <code><span class="tw" style="--i:20">CaseMilestone</span></code><span class="tw" style="--i:21">…</span></div>
+</div>
+<div id="pop-export" class="popup-overlay popup--tip popup--bottom-right" role="note">
+  <button class="popup-close" data-close="pop-export" title="Fermer" aria-label="Fermer">&#x2715;</button>
+  📸 Pas d'export Markdown… vous savez maintenant pourquoi cette présentation est faite de <strong>captures d'écran</strong>.
+</div>
+
+<button id="view-toggle" title="Basculer vue défilement / présentation">
+  <span id="view-toggle-icon">&#9776;</span><span id="view-toggle-label">Vue défilement</span>
+</button>
+
+<script src="vendor/reveal/reveal.js"></script>
+<script src="vendor/reveal/plugin/markdown/markdown.js"></script>
+<script src="vendor/reveal/plugin/highlight/highlight.js"></script>
+<script src="vendor/reveal/plugin/notes/notes.js"></script>
+<script>
+window.RD_LABELS = {"viewScroll": "Vue défilement", "viewPres": "Vue présentation"};
+window.RD_REVEAL_OPTIONS = {"hash": true, "slideNumber": "c/t", "transition": "slide", "width": 1280, "height": 720, "margin": 0.03};
+/* ════════════════════════════════════════════════════════════════════════
+   reveal-deck — runtime.js (moteur générique, inliné par build.py)
+
+   Tout est piloté par des FRAGMENTS Reveal portant des attributs :
+     data-popup-show / -expand / -close="id"   (générés depuis popups.md)
+     data-show="id1 id2"        ajoute .visible aux cibles (retiré au retour)
+     data-strike="id1 id2"      ajoute .struck (barré animé)
+     data-add-class="id:cls"    ajoute une classe quelconque (plusieurs séparés par espace)
+     data-anim-key="clé"        appelle l'animation enregistrée via RD.anim(clé, show, hide)
+   Aucun setTimeout/setInterval : les délais sont portés par la CSS.
+   ════════════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  var RD = window.RD = window.RD || {};
+  var anims = {};
+
+  /** Enregistre une animation sur mesure pour data-anim-key (dans deck.js). */
+  RD.anim = function (key, onShow, onHide) { anims[key] = { show: onShow, hide: onHide }; };
+
+  function $(id) { return document.getElementById(id); }
+  function ids(attr) { return (attr || '').split(/[\s,]+/).filter(Boolean); }
+
+  // ── Popups ──────────────────────────────────────────────────────────────
+  RD.showPopup = function (id) {
+    var el = $(id); if (!el) return;
+    el.classList.remove('expanded');
+    el.classList.add('popup-visible');
+  };
+  RD.expandPopup = function (id) { var el = $(id); if (el) el.classList.add('expanded'); };
+  RD.collapsePopup = function (id) { var el = $(id); if (el) el.classList.remove('expanded'); };
+  RD.hidePopup = function (id) {
+    var el = $(id); if (!el) return;
+    el.classList.remove('popup-visible', 'expanded');
+  };
+  RD.hideAllPopups = function () {
+    document.querySelectorAll('.popup-overlay.popup-visible').forEach(function (el) {
+      el.classList.remove('popup-visible', 'expanded');
+    });
+  };
+  window.hidePopup = RD.hidePopup;   // compat avec les onclick écrits à la main
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('.popup-close');
+    if (!btn) return;
+    // stopImmediatePropagation : sinon Reveal (ou un autre handler) traite le clic
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    RD.hidePopup(btn.getAttribute('data-close'));
+  }, true);
+
+  // ── Effets génériques pilotés par attributs ─────────────────────────────
+  function toggleClass(list, cls, on) {
+    ids(list).forEach(function (id) { var t = $(id); if (t) t.classList.toggle(cls, on); });
+  }
+  function addClassSpec(spec, on) {
+    ids(spec).forEach(function (pair) {
+      var i = pair.indexOf(':'); if (i < 0) return;
+      var t = $(pair.slice(0, i)); if (t) t.classList.toggle(pair.slice(i + 1), on);
+    });
+  }
+
+  function apply(f, shown) {
+    var d = f.dataset;
+    if (d.popupShow)   shown ? RD.showPopup(d.popupShow)     : RD.hidePopup(d.popupShow);
+    if (d.popupExpand) shown ? RD.expandPopup(d.popupExpand) : RD.collapsePopup(d.popupExpand);
+    if (d.popupClose)  shown ? RD.hidePopup(d.popupClose)    : RD.showPopup(d.popupClose);
+    if (d.show)     toggleClass(d.show, 'visible', shown);
+    if (d.strike)   toggleClass(d.strike, 'struck', shown);
+    if (d.addClass) addClassSpec(d.addClass, shown);
+    if (d.animKey && anims[d.animKey]) {
+      var fn = shown ? anims[d.animKey].show : anims[d.animKey].hide;
+      if (fn) fn(f);
+    }
+  }
+
+  // ── Bascule vue défilement / présentation ───────────────────────────────
+  function setupViewToggle() {
+    var btn = $('view-toggle'); if (!btn) return;
+    var icon = $('view-toggle-icon'), label = $('view-toggle-label');
+    var L = window.RD_LABELS || {};
+    var scroll = false;
+    btn.addEventListener('click', function (e) {
+      e.stopImmediatePropagation();
+      scroll = !scroll;
+      RD.hideAllPopups();
+      if (scroll) {
+        Reveal.configure({ view: 'scroll', scrollLayout: 'wide', scrollSnapping: 'none', fragments: false });
+        icon.textContent = '▶'; label.textContent = L.viewPres || 'Présentation';
+      } else {
+        Reveal.configure({ view: undefined, fragments: true });
+        icon.textContent = '☰'; label.textContent = L.viewScroll || 'Défilement';
+      }
+    });
+  }
+
+  // ── Sommaire en vignettes texte (touche O) ──────────────────────────────
+  // Une carte par slide : numéro · surtitre (data-kicker, ou .kicker / .bloc-num) puis titre.
+  // Remplace la vue d'ensemble native de Reveal sur O ; Échap garde la vue native.
+  function setupSommaire() {
+    var box = document.createElement('div');
+    box.id = 'rd-sommaire';
+    document.body.appendChild(box);
+    function text(el) { return el ? el.textContent.replace(/\s+/g, ' ').trim() : ''; }
+    function build() {
+      box.innerHTML = '';
+      var current = Reveal.getCurrentSlide();
+      Reveal.getSlides().forEach(function (slide, i) {
+        var kicker = slide.getAttribute('data-kicker') || text(slide.querySelector('.kicker, .bloc-num'));
+        var title = text(slide.querySelector('h1, h2, h3'));
+        var card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'rd-thumb' + (slide === current ? ' current' : '');
+        card.innerHTML = '<b></b><span></span>';
+        card.firstChild.textContent = (i + 1) + (kicker ? ' · ' + kicker : '');
+        card.lastChild.textContent = title;
+        card.addEventListener('click', function (e) {
+          e.stopImmediatePropagation();
+          var idx = Reveal.getIndices(slide);
+          close();
+          Reveal.slide(idx.h, idx.v);
+        });
+        box.appendChild(card);
+      });
+    }
+    function open() { build(); box.classList.add('open'); var c = box.querySelector('.current'); if (c) c.scrollIntoView({ block: 'center' }); }
+    function close() { box.classList.remove('open'); }
+    RD.toggleSommaire = function () { box.classList.contains('open') ? close() : open(); };
+    Reveal.addKeyBinding({ keyCode: 79, key: 'O', description: 'Sommaire des slides' }, RD.toggleSommaire);
+    // Échap ferme le sommaire s'il est ouvert, sans déclencher la vue native de Reveal
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && box.classList.contains('open')) { e.stopImmediatePropagation(); e.preventDefault(); close(); }
+    }, true);
+  }
+
+  // ── Initialisation Reveal ───────────────────────────────────────────────
+  var opts = Object.assign({}, window.RD_REVEAL_OPTIONS || {}, {
+    plugins: [RevealMarkdown, RevealHighlight, RevealNotes]
+  });
+  Reveal.initialize(opts);
+
+  Reveal.on('ready', function () { RD.hideAllPopups(); setupViewToggle(); setupSommaire(); });
+  Reveal.on('slidechanged', function () { RD.hideAllPopups(); });
+  // e.fragments : tous les fragments du même data-fragment-index (e.fragment = seulement le premier)
+  Reveal.on('fragmentshown', function (e) { (e.fragments || [e.fragment]).forEach(function (f) { apply(f, true); }); });
+  Reveal.on('fragmenthidden', function (e) { (e.fragments || [e.fragment]).forEach(function (f) { apply(f, false); }); });
+})();
+
+</script>
+<script>
+/* ── img/marks.js ── */
+/* généré par tools/captures.py — ne pas éditer */
+window.SC_MARKS = {
+"db-devc": [
+[
+4.84,
+25.45,
+90.31,
+24.42
+],
+[
+4.84,
+52.44,
+90.31,
+21.08
+]
+],
+"dep-key": [
+[
+2.13,
+25.31,
+53.16,
+14.69
+],
+[
+57.0,
+25.31,
+19.97,
+14.69
+],
+[
+2.13,
+47.97,
+95.73,
+42.5
+],
+[
+32.42,
+46.72,
+9.13,
+37.5
+]
+],
+"dep-ba": [
+[
+46.49,
+1.68,
+52.81,
+48.32
+],
+[
+46.49,
+50.0,
+52.81,
+48.32
+]
+],
+"dep-infra": [
+[
+0.7,
+2.15,
+98.59,
+10.22
+],
+[
+0.7,
+56.18,
+98.59,
+8.33
+],
+[
+0.7,
+81.18,
+98.59,
+8.33
+]
+],
+"dep-ux": [
+[
+0.7,
+64.97,
+98.59,
+6.87
+]
+],
+"dep-row": [
+[
+0.7,
+20.47,
+98.59,
+38.84
+]
+],
+"dep-gen": [
+[
+5.62,
+27.84,
+88.76,
+36.62
+],
+[
+5.62,
+65.81,
+88.76,
+4.86
+]
+],
+"dep-fix": [
+[
+2.13,
+25.31,
+53.16,
+14.69
+],
+[
+2.13,
+47.97,
+95.73,
+42.5
+]
+],
+"gov": [
+[
+34.39,
+23.68,
+31.23,
+14.74
+],
+[
+2.13,
+57.37,
+22.78,
+13.42
+],
+[
+2.13,
+40.26,
+95.73,
+30.53
+]
+],
+"gov-detail": [
+[
+2.2,
+9.4,
+46.92,
+51.63
+],
+[
+50.88,
+12.67,
+46.92,
+48.37
+],
+[
+13.97,
+38.0,
+10.37,
+3.26
+]
+],
+"lex": [
+[
+2.13,
+8.37,
+95.73,
+5.2
+],
+[
+2.13,
+25.92,
+95.73,
+10.2
+],
+[
+2.13,
+37.55,
+95.73,
+20.82
+]
+],
+"lex-pages": [
+[
+0.7,
+19.78,
+98.59,
+8.64
+],
+[
+0.7,
+11.14,
+98.59,
+8.64
+]
+],
+"lex-geo": [
+[
+0.7,
+2.52,
+48.42,
+94.95
+],
+[
+50.88,
+2.52,
+48.42,
+88.33
+]
+],
+"report": [
+[
+2.13,
+25.39,
+95.73,
+31.58
+],
+[
+2.13,
+65.13,
+95.73,
+7.11
+]
+],
+"search": [
+[
+0.7,
+50.95,
+48.42,
+44.76
+],
+[
+50.88,
+50.95,
+48.42,
+44.76
+]
+],
+"mf": [
+[
+2.13,
+23.91,
+95.73,
+9.42
+],
+[
+2.13,
+45.11,
+95.73,
+50.72
+]
+],
+"act": [
+[
+43.09,
+58.81,
+13.91,
+5.71
+],
+[
+2.99,
+48.57,
+94.03,
+4.05
+]
+],
+"act-agree": [
+[
+4.23,
+35.06,
+91.55,
+30.63
+],
+[
+85.33,
+70.48,
+8.1,
+11.81
+]
+],
+"alerts-set": [
+[
+2.13,
+35.79,
+95.73,
+36.63
+],
+[
+2.13,
+78.95,
+95.73,
+6.95
+]
+],
+"alerts-hist": [
+[
+2.13,
+15.14,
+95.73,
+9.43
+],
+[
+2.13,
+38.46,
+95.73,
+15.88
+]
+],
+"overview": [
+[
+2.13,
+8.74,
+47.01,
+41.65
+],
+[
+2.13,
+25.12,
+47.01,
+5.88
+],
+[
+50.85,
+13.51,
+47.01,
+36.88
+],
+[
+0.68,
+54.69,
+98.63,
+44.04
+],
+[
+79.18,
+3.66,
+12.03,
+5.09
+]
+],
+"orgperf": [
+[
+2.13,
+14.11,
+95.73,
+5.67
+],
+[
+2.13,
+21.33,
+95.73,
+8.56
+],
+[
+2.13,
+31.44,
+95.73,
+36.0
+],
+[
+65.1,
+32.0,
+32.76,
+1.78
+]
+],
+"orgperf-menu": [
+[
+72.75,
+16.98,
+1.5,
+37.74
+],
+[
+72.93,
+21.51,
+19.4,
+77.36
+]
+],
+"an-list": [
+[
+84.3,
+36.23,
+8.96,
+11.59
+],
+[
+2.13,
+50.72,
+95.73,
+37.32
+]
+],
+"an-new": [
+[
+6.81,
+31.94,
+42.02,
+7.86
+]
+],
+"cons-head": [
+[
+2.13,
+4.53,
+95.73,
+13.75
+],
+[
+2.13,
+27.34,
+95.73,
+39.38
+],
+[
+2.13,
+67.66,
+95.73,
+12.5
+]
+],
+"cons-conc": [
+[
+0.7,
+8.49,
+98.59,
+35.46
+],
+[
+0.7,
+47.35,
+48.42,
+50.96
+],
+[
+50.88,
+53.72,
+48.42,
+44.59
+]
+],
+"cons-slow": [
+[
+50.88,
+9.21,
+48.42,
+27.63
+],
+[
+0.7,
+42.63,
+98.59,
+13.16
+],
+[
+0.7,
+65.13,
+98.59,
+22.89
+]
+],
+"cons-soql": [
+[
+0.7,
+45.26,
+98.59,
+9.48
+],
+[
+37.61,
+45.26,
+6.85,
+9.48
+]
+],
+"cons-db": [
+[
+0.7,
+7.14,
+48.42,
+43.39
+],
+[
+50.88,
+7.14,
+48.42,
+43.39
+],
+[
+34.09,
+62.5,
+31.81,
+32.14
+]
+],
+"cons-row": [
+[
+50.88,
+1.7,
+48.42,
+44.04
+],
+[
+0.7,
+55.11,
+43.94,
+13.62
+],
+[
+0.7,
+78.09,
+98.59,
+20.21
+]
+],
+"cons-gov": [
+[
+0.7,
+9.55,
+98.59,
+55.37
+],
+[
+0.7,
+75.42,
+98.59,
+22.67
+]
+],
+"cons-int": [
+[
+0.7,
+12.12,
+98.59,
+43.33
+],
+[
+0.7,
+88.18,
+98.59,
+9.39
+]
+],
+"cons-flow": [
+[
+0.7,
+19.8,
+98.59,
+62.38
+]
+],
+"ag-code": [
+[
+0.7,
+1.21,
+98.59,
+5.92
+],
+[
+0.7,
+8.95,
+98.59,
+5.77
+],
+[
+0.7,
+16.84,
+98.59,
+15.17
+],
+[
+2.2,
+36.12,
+95.61,
+12.44
+],
+[
+2.2,
+50.38,
+95.61,
+46.13
+]
+],
+"ag-tests": [
+[
+2.2,
+24.2,
+95.61,
+14.43
+],
+[
+32.43,
+43.73,
+65.38,
+52.92
+]
+],
+"ag-dups": [
+[
+88.93,
+1.05,
+10.37,
+7.11
+],
+[
+54.39,
+28.42,
+2.9,
+2.5
+],
+[
+2.37,
+34.47,
+95.25,
+9.08
+]
+],
+"ag-eng": [
+[
+2.2,
+6.73,
+95.61,
+23.98
+],
+[
+53.34,
+40.94,
+46.66,
+52.34
+]
+],
+"db-top": [
+[
+2.13,
+20.94,
+95.73,
+5.56
+],
+[
+2.13,
+49.05,
+95.73,
+9.22
+],
+[
+15.53,
+49.05,
+6.66,
+9.22
+]
+],
+"db-reg": [
+[
+2.13,
+34.57,
+95.73,
+17.73
+],
+[
+2.13,
+74.65,
+95.73,
+11.17
+]
+],
+"db-qpa": [
+[
+2.13,
+44.31,
+95.73,
+13.87
+],
+[
+2.13,
+75.57,
+95.73,
+9.73
+]
+],
+"ov-peak": [
+[
+0.7,
+22.9,
+48.42,
+11.94
+],
+[
+0.7,
+46.13,
+48.42,
+11.94
+],
+[
+50.88,
+22.58,
+48.42,
+74.84
+],
+[
+86.91,
+2.58,
+12.39,
+10.32
+]
+],
+"ov-wait": [
+[
+81.9,
+2.03,
+17.4,
+8.1
+],
+[
+0.7,
+80.0,
+98.59,
+17.97
+]
+],
+"ov-top3": [
+[
+2.02,
+12.96,
+30.93,
+82.51
+],
+[
+3.87,
+56.8,
+27.24,
+11.02
+],
+[
+13.09,
+84.45,
+8.79,
+6.91
+]
+],
+"ov-apex": [
+[
+2.13,
+22.05,
+95.73,
+16.84
+],
+[
+8.79,
+46.63,
+9.04,
+2.86
+],
+[
+2.13,
+68.35,
+95.73,
+5.22
+]
+],
+"ov-soql": [
+[
+2.13,
+48.36,
+95.73,
+11.03
+],
+[
+34.04,
+48.36,
+7.25,
+11.03
+]
+],
+"ov-err": [
+[
+2.13,
+50.13,
+95.73,
+8.22
+]
+],
+"orgperf-sel": [
+[
+72.75,
+16.98,
+1.5,
+37.74
+],
+[
+72.93,
+17.36,
+1.76,
+3.4
+]
+],
+"ag-unused": [
+[
+2.2,
+16.74,
+95.61,
+17.19
+],
+[
+2.2,
+61.83,
+95.61,
+12.72
+]
+],
+"ag-exp": [
+[
+2.2,
+13.78,
+95.61,
+18.18
+],
+[
+2.2,
+53.96,
+95.61,
+36.36
+]
+],
+"gov-api": [
+[
+2.2,
+10.19,
+46.92,
+7.45
+],
+[
+2.2,
+22.34,
+46.92,
+1.86
+],
+[
+50.88,
+8.32,
+46.92,
+25.41
+],
+[
+2.2,
+38.44,
+95.61,
+17.31
+]
+],
+"gov-async": [
+[
+2.2,
+9.11,
+46.92,
+9.99
+],
+[
+2.2,
+23.31,
+46.92,
+1.67
+],
+[
+50.88,
+7.44,
+46.92,
+22.72
+],
+[
+2.2,
+34.38,
+95.61,
+12.44
+],
+[
+2.2,
+78.26,
+95.61,
+18.51
+]
+],
+"gov-conc": [
+[
+2.2,
+13.66,
+46.92,
+12.48
+],
+[
+2.2,
+32.45,
+46.92,
+2.5
+],
+[
+50.88,
+11.16,
+46.92,
+34.07
+],
+[
+2.2,
+51.54,
+95.61,
+18.65
+],
+[
+2.2,
+76.51,
+95.61,
+18.65
+]
+],
+"lex-drill": [
+[
+0.7,
+13.65,
+98.59,
+6.15
+],
+[
+0.7,
+19.81,
+98.59,
+6.15
+],
+[
+4.92,
+39.04,
+93.32,
+9.04
+],
+[
+4.92,
+27.31,
+93.32,
+11.92
+]
+],
+"lex-usage": [
+[
+0.7,
+6.44,
+98.59,
+11.11
+],
+[
+0.7,
+22.44,
+48.42,
+28.0
+],
+[
+0.7,
+50.44,
+48.42,
+36.78
+],
+[
+50.88,
+50.44,
+48.42,
+36.78
+],
+[
+0.7,
+91.0,
+98.59,
+9.0
+]
+],
+"lex-mostused": [
+[
+74.69,
+2.23,
+14.32,
+9.19
+]
+],
+"gov-bulk2": [
+[
+70.91,
+67.19,
+18.45,
+5.41
+],
+[
+2.2,
+16.23,
+46.92,
+5.93
+]
+],
+"gov-bulkb": [
+[
+14.04,
+24.14,
+16.94,
+17.82
+]
+],
+"gov-pe": [
+[
+2.2,
+45.35,
+95.61,
+16.41
+],
+[
+2.2,
+67.31,
+95.61,
+28.42
+]
+],
+"lex-u-kpis": [],
+"lex-u-trends": [
+[
+7.56,
+82.53,
+20.57,
+1.71
+],
+[
+29.97,
+12.33,
+19.31,
+15.75
+]
+],
+"lex-u-map": [],
+"lex-u-br": [
+[
+57.32,
+10.95,
+41.27,
+77.52
+]
+],
+"ov-z1": [],
+"ov-z2": [],
+"ov-z3": [],
+"op-z1": [],
+"op-z2": [],
+"op-z3": [],
+"ge-menu": [],
+"db-reg-wdf": [
+[
+16.3,
+20.94,
+12.8,
+5.56
+],
+[
+2.13,
+59.3,
+95.73,
+6.88
+]
+],
+"lx-z1": [],
+"lx-z2": [],
+"lx-z3": [],
+"ag-eng-soql": [
+[
+2.2,
+7.72,
+95.61,
+33.22
+],
+[
+63.8,
+52.68,
+34.01,
+39.6
+]
+]
+};
+
+/* ── deck.js ── */
+/* Deck « Scale Center » — positionnement des repères sur les captures annotées.
+   <div class="shot" data-cap="id"><img src="img/id.png"><span class="mk fragment" data-mk="2"></span></div>
+   Les positions (en % de l'image) viennent de img/marks.js, généré par tools/captures.py. */
+(function () {
+  function place() {
+    var M = window.SC_MARKS || {};
+    document.querySelectorAll('.shot[data-cap]').forEach(function (shot) {
+      var marks = M[shot.dataset.cap] || [];
+      shot.querySelectorAll('.mk').forEach(function (mk) {
+        var r = (mk.dataset.cap ? (M[mk.dataset.cap] || []) : marks)[(+mk.dataset.mk) - 1];   // data-cap sur un repère : positions d'une autre capture
+        if (!r) { mk.style.display = 'none'; console.warn('repère manquant', shot.dataset.cap, mk.dataset.mk); return; }
+        mk.style.left = r[0] + '%'; mk.style.top = r[1] + '%'; mk.style.width = r[2] + '%'; mk.style.height = r[3] + '%';
+        mk.setAttribute('data-n', mk.dataset.label || mk.dataset.mk);   // numéro affiché (ordre du discours)
+      });
+    });
+  }
+  // ?shot : tous les fragments visibles (vérification par captures d'écran)
+  if (/[?&]shot\b/.test(location.search)) {
+    var st = document.createElement('style');
+    st.textContent = '.reveal .fragment,.reveal .rd-hidden,.reveal .v-reality{opacity:1!important;visibility:visible!important;transform:none!important}';
+    document.head.appendChild(st);
+  }
+  // ?frag=N : se placer au fragment N de la slide courante (vérification par captures)
+  var fm = location.search.match(/[?&]frag=(-?\d+)/);
+  if (fm) Reveal.on('ready', function () { for (var k = 0; k < +fm[1]; k++) Reveal.nextFragment(); });   // clics simulés un par un
+  // ?sommaire=1 : ouvre le sommaire (vérification par captures)
+  if (/[?&]sommaire=1/.test(location.search)) Reveal.on('ready', function () { RD.toggleSommaire && RD.toggleSommaire(); });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', place); else place();
+  Reveal.on('ready', place);
+})();
+
+</script>
+</body>
+</html>
