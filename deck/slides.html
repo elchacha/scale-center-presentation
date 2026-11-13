@@ -653,7 +653,7 @@ section.present .rd-in { animation: rdRise .45s ease var(--d, 0s) forwards; }
 <div class="v-funnel">
   <div class="v-inputs">
     <div class="v-box">Le socle<small>Alerts · Org Overview · Org Performance</small></div>
-    <div class="v-box">9 Scale Insights<small>ApexGuru · Database · Deployment · Governor Limit · LEX · Report · Search · Multi-Framework</small></div>
+    <div class="v-box">8 Scale Insights<small>ApexGuru · Database · Deployment · Governor Limit · LEX · Report · Search · Multi-Framework</small></div>
   </div>
   <div class="v-arrow fragment" data-fragment-index="1">→</div>
   <div class="v-core fragment" data-fragment-index="1">Performance<br>Analysis</div>
@@ -1550,23 +1550,28 @@ section.present .rd-in { animation: rdRise .45s ease var(--d, 0s) forwards; }
   <div class="qa">
     <div class="q">Q : pourquoi les verrous durent-ils ?</div>
     <div class="a fragment" data-fragment-index="1">① Ligne 58 : 84 % du temps SOQL, 97 % &gt; 5 s</div>
-    <div class="a fragment" data-fragment-index="2">② En régression : +620 % sur la semaine</div>
-    <div class="a fragment" data-fragment-index="3">③ Dev Console : TableScan, Statut__c non indexé</div>
+    <div class="a fragment" data-fragment-index="2">② Top 15 : <code>getEnAttente</code> = cette requête</div>
+    <div class="a fragment" data-fragment-index="3">③ En régression : +620 % sur la semaine</div>
+    <div class="a fragment" data-fragment-index="4">④ Dev Console : TableScan, Statut__c non indexé</div>
   </div>
 </div>
 <div id="zl1" class="rd-hidden zoom"><div class="zoom-head">🔍 ① Apex Summary › <b>Top 5 Expensive SOQLs</b></div>
   <div class="zoom-body"><div class="shot" data-cap="cons-soql"><img src="img/cons-soql.png"><span class="mk" data-mk="1"></span><span class="mk" data-mk="2"></span></div>
   <ol class="legend"><li><b>1</b><span>La requête la plus coûteuse : 84 % du temps SOQL, 97 % au-delà de 5 s</span></li><li class="key"><b>2</b><span>Ligne 58 de <code>ENG_PrestationSelector</code></span></li></ol></div></div>
-<div id="zl2" class="rd-hidden zoom"><div class="zoom-head">🔍 ② Database Insights › <b>Regressed SOQLs</b></div>
+<div id="zl2" class="rd-hidden zoom"><div class="zoom-head">🔍 ② Database Insights › <b>Top 15 Expensive SOQLs</b></div>
+  <div class="zoom-body"><div class="shot" data-cap="db-top-eng"><img src="img/db-top-eng.png"><span class="mk" data-mk="1"></span><span class="mk" data-mk="2"></span></div>
+  <ol class="legend"><li><b>1</b><span>Entry Point : <code>ENG_PrestationSelector.getEnAttente</code>, la méthode de la ligne 58</span></li><li class="key"><b>2</b><span>Et le texte de sa requête : un filtre sur <code>Statut__c</code>, rien d'autre</span></li></ol></div></div>
+<div id="zl3" class="rd-hidden zoom"><div class="zoom-head">🔍 ③ Database Insights › <b>Regressed SOQLs</b></div>
   <div class="zoom-body"><div class="shot" data-cap="db-reg"><img src="img/db-reg.png"><span class="mk" data-mk="1"></span><span class="mk" data-mk="2"></span></div>
-  <ol class="legend"><li><b>1</b><span>Critical : chère et fréquente pendant le pic</span></li><li class="key"><b>2</b><span>La même requête : <b>+620 %</b> sur la semaine, et la recommandation « filtre date + index »</span></li></ol></div></div>
-<div id="zl3" class="rd-hidden zoom"><div class="zoom-head">🔍 ③ Developer Console › <b>Query Plan</b></div>
+  <ol class="legend"><li><b>1</b><span>Critical : chère et fréquente pendant le pic</span></li><li class="key"><b>2</b><span>Cette requête : <b>+620 %</b> sur la semaine, et la recommandation « filtre date + index »</span></li></ol></div></div>
+<div id="zl4" class="rd-hidden zoom"><div class="zoom-head">🔍 ④ Developer Console › <b>Query Plan</b></div>
   <div class="zoom-body"><div class="shot" data-cap="db-devc"><img src="img/db-devc.png"><span class="mk" data-mk="1"></span><span class="mk" data-mk="2"></span></div>
   <ol class="legend"><li><b>1</b><span><b>TableScan</b> sur 2,1 M lignes, coût 1,81</span></li><li class="key"><b>2</b><span>Le champ fautif : <code>Statut__c</code> non indexé</span></li></ol></div></div>
 <span class="fragment rd-trigger" data-fragment-index="1" data-show="zl1"></span>
 <span class="fragment rd-trigger" data-fragment-index="2" data-add-class="zl1:gone" data-show="zl2"></span>
 <span class="fragment rd-trigger" data-fragment-index="3" data-add-class="zl2:gone" data-show="zl3"></span>
-<span class="fragment rd-trigger" data-fragment-index="4" data-add-class="zl3:gone"></span>
+<span class="fragment rd-trigger" data-fragment-index="4" data-add-class="zl3:gone" data-show="zl4"></span>
+<span class="fragment rd-trigger" data-fragment-index="5" data-add-class="zl4:gone"></span>
 <aside class="notes">La transaction lente garde le verrou plus longtemps → les deux problèmes s'aggravent</aside>
 <span class="fragment rd-trigger" data-popup-show="pop-ligne58"></span>
 <span class="fragment rd-trigger" data-popup-close="pop-ligne58"></span>
@@ -2961,6 +2966,20 @@ window.SC_MARKS = {
 52.68,
 34.01,
 39.6
+]
+],
+"db-top-eng": [
+[
+35.24,
+22.16,
+20.39,
+18.86
+],
+[
+55.62,
+22.16,
+22.85,
+18.86
 ]
 ]
 };
